@@ -47,15 +47,21 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const permissions = listPermissions(ctx);
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar permissions={permissions} />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Topbar
-          orgName={org?.name ?? 'Your organization'}
-          userName={profile?.full_name ?? profile?.email ?? null}
-          planLabel={planLabel}
-        />
-        <main className="flex-1 overflow-y-auto bg-muted/20 p-4 lg:p-8">{children}</main>
+    <div className="flex h-screen overflow-hidden print:block print:h-auto print:overflow-visible">
+      <div className="print:hidden">
+        <Sidebar permissions={permissions} />
+      </div>
+      <div className="flex flex-1 flex-col overflow-hidden print:overflow-visible">
+        <div className="print:hidden">
+          <Topbar
+            orgName={org?.name ?? 'Your organization'}
+            userName={profile?.full_name ?? profile?.email ?? null}
+            planLabel={planLabel}
+          />
+        </div>
+        <main className="flex-1 overflow-y-auto bg-muted/20 p-4 lg:p-8 print:overflow-visible print:bg-transparent print:p-0">
+          {children}
+        </main>
       </div>
     </div>
   );
