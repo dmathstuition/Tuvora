@@ -1,0 +1,350 @@
+import 'server-only';
+import { createClient } from '@/lib/supabase/server';
+import { getAuthContext } from '@/lib/auth/context';
+import { isPlatformStaff, isSuperAdmin } from '@/lib/permissions';
+import { startOfMonth, subMonths, format } from 'date-fns';
+
+/**
+ * Platform-admin data services. Every read runs through the signed-in user's
+ * client, so RLS is the gate: only a super admin's policies expose cross-tenant
+ * data. The /admin layout blocks non-staff before these are ever called.
+ */
+export async function requirePlatformStaff() {
+  const ctx = await getAuthContext();
+  if (!ctx || !isPlatformStaff(ctx)) return null;
+  return ctx;
+}
+
+export interface PlatformStats {
+  organizations: number;
+  tutors: number;
+  learners: number;
+  activeSubscriptions: number;
+  mrrMinor: number;
+  mrrCurrency: string;
+}
+
+async function count(table: string): Promise<number> {
+  const supabase = await createClient();
+  const { count } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from(table as any)
+    .select('id', { count: 'exact', head: true });
+  return count ?? 0;
+}
+
+export async function getPlatformStats(): Promise<PlatformStats> {
+  const supabase = await createClient();
+
+  const [orgs, learners, members, subs, plans] = await Promise.all([
+    count('organizations'),
+    count('learners'),
+    supabase
+      .from('organization_members')
+      .select('id', { count: 'exact', head: true })
+      .in('role', ['owner', 'admin', 'tutor', 'assistant']),
+    supabase
+      .from('subscriptions')
+      .select('plan_id, status')
+      .in('status', ['trialing', 'active', 'past_due']),
+    supabase.from('subscription_plans').select('id, monthly_price_minor, currency'),
+  ]);
+
+  const priceById = new Map(
+    (plans.data ?? []).map((p) => [p.id, { minor: p.monthly_price_minor, currency: p.currency }]),
+  );
+
+  // MRR grouped by currency; report the currency with the largest total.
+  const mrrByCurrency = new Map<string, number>();
+  for (const s of subs.data ?? []) {
+    if (s.status !== 'active') continue; // MRR = actively paying
+    const price = priceById.get(s.plan_id);
+    if (!price) continue;
+    mrrByCurrency.set(price.currency, (mrrByCurrency.get(price.currency) ?? 0) + price.minor);
+  }
+  const top = [...mrrByCurrency.entries()].sort((a, b) => b[1] - a[1])[0];
+
+  return {
+    organizations: orgs,
+    tutors: members.count ?? 0,
+    learners,
+    activeSubscriptions: (subs.data ?? []).length,
+    mrrMinor: top?.[1] ?? 0,
+    mrrCurrency: top?.[0] ?? 'USD',
+  };
+}
+
+export interface RevenuePoint {
+  label: string;
+  value: number; // minor units
+}
+
+/** Monthly platform revenue (succeeded platform payments) for the last N months. */
+export async function getRevenueTrend(months = 6): Promise<RevenuePoint[]> {
+  const supabase = await createClient();
+  const since = startOfMonth(subMonths(new Date(), months - 1));
+
+  const { data } = await supabase
+    .from('payments')
+    .select('amount_minor, paid_at, direction, status')
+    .eq('direction', 'platform')
+    .eq('status', 'succeeded')
+    .gte('paid_at', since.toISOString());
+
+  const buckets: { key: string; label: string; total: number }[] = [];
+  for (let i = months - 1; i >= 0; i--) {
+    const d = startOfMonth(subMonths(new Date(), i));
+    buckets.push({ key: format(d, 'yyyy-MM'), label: format(d, 'MMM'), total: 0 });
+  }
+  const byKey = new Map(buckets.map((b) => [b.key, b]));
+  for (const p of data ?? []) {
+    if (!p.paid_at) continue;
+    const key = format(new Date(p.paid_at), 'yyyy-MM');
+    const b = byKey.get(key);
+    if (b) b.total += p.amount_minor;
+  }
+  return buckets.map((b) => ({ label: b.label, value: b.total }));
+}
+
+export interface PlanSlice {
+  name: string;
+  count: number;
+}
+
+export async function getPlanDistribution(): Promise<PlanSlice[]> {
+  const supabase = await createClient();
+  const [{ data: subs }, { data: plans }] = await Promise.all([
+    supabase
+      .from('subscriptions')
+      .select('plan_id')
+      .in('status', ['trialing', 'active', 'past_due']),
+    supabase.from('subscription_plans').select('id, name'),
+  ]);
+  const nameById = new Map((plans ?? []).map((p) => [p.id, p.name]));
+  const counts = new Map<string, number>();
+  for (const s of subs ?? []) {
+    const name = nameById.get(s.plan_id) ?? 'Unknown';
+    counts.set(name, (counts.get(name) ?? 0) + 1);
+  }
+  return [...counts.entries()].map(([name, count]) => ({ name, count }));
+}
+
+export interface OrgRow {
+  id: string;
+  name: string;
+  type: string;
+  currency: string;
+  createdAt: string;
+}
+
+export async function getRecentOrganizations(limit = 6): Promise<OrgRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('organizations')
+    .select('id, name, type, currency, created_at')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  return (data ?? []).map((o) => ({
+    id: o.id,
+    name: o.name,
+    type: o.type,
+    currency: o.currency,
+    createdAt: o.created_at,
+  }));
+}
+
+export interface PaymentRow {
+  id: string;
+  orgName: string;
+  amountMinor: number;
+  currency: string;
+  status: string;
+  paidAt: string | null;
+}
+
+export async function getRecentPayments(limit = 6): Promise<PaymentRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('payments')
+    .select('id, organization_id, amount_minor, currency, status, paid_at, created_at')
+    .eq('direction', 'platform')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  const rows = data ?? [];
+  const orgIds = [...new Set(rows.map((r) => r.organization_id))];
+  const names = new Map<string, string>();
+  if (orgIds.length > 0) {
+    const supabase2 = await createClient();
+    const { data: orgs } = await supabase2.from('organizations').select('id, name').in('id', orgIds);
+    for (const o of orgs ?? []) names.set(o.id, o.name);
+  }
+
+  return rows.map((r) => ({
+    id: r.id,
+    orgName: names.get(r.organization_id) ?? 'Organization',
+    amountMinor: r.amount_minor,
+    currency: r.currency,
+    status: r.status,
+    paidAt: r.paid_at ?? r.created_at,
+  }));
+}
+
+/** Only super admins can see full cross-tenant data; used for UI messaging. */
+export async function viewerIsSuperAdmin(): Promise<boolean> {
+  const ctx = await getAuthContext();
+  return !!ctx && isSuperAdmin(ctx);
+}
+
+// ---------------------------------------------------------------------------
+// List pages
+// ---------------------------------------------------------------------------
+
+export interface OrgListRow {
+  id: string;
+  name: string;
+  type: string;
+  currency: string;
+  country: string | null;
+  createdAt: string;
+  archived: boolean;
+  learners: number;
+  members: number;
+}
+
+export async function listOrganizations(limit = 100): Promise<OrgListRow[]> {
+  const supabase = await createClient();
+  const { data: orgs } = await supabase
+    .from('organizations')
+    .select('id, name, type, currency, country, created_at, archived_at')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  const rows = orgs ?? [];
+  if (rows.length === 0) return [];
+
+  const ids = rows.map((o) => o.id);
+  const [{ data: learners }, { data: members }] = await Promise.all([
+    supabase.from('learners').select('organization_id').in('organization_id', ids),
+    supabase.from('organization_members').select('organization_id').in('organization_id', ids),
+  ]);
+  const learnerCount = new Map<string, number>();
+  for (const l of learners ?? []) learnerCount.set(l.organization_id, (learnerCount.get(l.organization_id) ?? 0) + 1);
+  const memberCount = new Map<string, number>();
+  for (const m of members ?? []) memberCount.set(m.organization_id, (memberCount.get(m.organization_id) ?? 0) + 1);
+
+  return rows.map((o) => ({
+    id: o.id,
+    name: o.name,
+    type: o.type,
+    currency: o.currency,
+    country: o.country,
+    createdAt: o.created_at,
+    archived: !!o.archived_at,
+    learners: learnerCount.get(o.id) ?? 0,
+    members: memberCount.get(o.id) ?? 0,
+  }));
+}
+
+export interface SubRow {
+  id: string;
+  orgName: string;
+  planName: string;
+  status: string;
+  interval: string;
+  currentPeriodEnd: string | null;
+}
+
+export async function listSubscriptions(limit = 100): Promise<SubRow[]> {
+  const supabase = await createClient();
+  const { data: subs } = await supabase
+    .from('subscriptions')
+    .select('id, organization_id, plan_id, status, interval, current_period_end, created_at')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  const rows = subs ?? [];
+  if (rows.length === 0) return [];
+
+  const [{ data: orgs }, { data: plans }] = await Promise.all([
+    supabase.from('organizations').select('id, name').in('id', [...new Set(rows.map((r) => r.organization_id))]),
+    supabase.from('subscription_plans').select('id, name'),
+  ]);
+  const orgName = new Map((orgs ?? []).map((o) => [o.id, o.name]));
+  const planName = new Map((plans ?? []).map((p) => [p.id, p.name]));
+
+  return rows.map((s) => ({
+    id: s.id,
+    orgName: orgName.get(s.organization_id) ?? 'Organization',
+    planName: planName.get(s.plan_id) ?? 'Plan',
+    status: s.status,
+    interval: s.interval,
+    currentPeriodEnd: s.current_period_end,
+  }));
+}
+
+export interface PlanAdminRow {
+  id: string;
+  name: string;
+  slug: string;
+  monthlyPriceMinor: number;
+  currency: string;
+  includedLearners: number;
+  isActive: boolean;
+  isPublic: boolean;
+  subscribers: number;
+}
+
+export async function listPlans(): Promise<PlanAdminRow[]> {
+  const supabase = await createClient();
+  const [{ data: plans }, { data: subs }] = await Promise.all([
+    supabase.from('subscription_plans').select('*').order('sort_order', { ascending: true }),
+    supabase.from('subscriptions').select('plan_id').in('status', ['trialing', 'active', 'past_due']),
+  ]);
+  const subCount = new Map<string, number>();
+  for (const s of subs ?? []) subCount.set(s.plan_id, (subCount.get(s.plan_id) ?? 0) + 1);
+  return (plans ?? []).map((p) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    monthlyPriceMinor: p.monthly_price_minor,
+    currency: p.currency,
+    includedLearners: p.included_learners,
+    isActive: p.is_active,
+    isPublic: p.is_public,
+    subscribers: subCount.get(p.id) ?? 0,
+  }));
+}
+
+export async function listPlatformPayments(limit = 100): Promise<PaymentRow[]> {
+  return getRecentPayments(limit);
+}
+
+export interface AuditRow {
+  id: string;
+  action: string;
+  resourceType: string | null;
+  orgName: string | null;
+  createdAt: string;
+}
+
+export async function listAuditLogs(limit = 100): Promise<AuditRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('audit_logs')
+    .select('id, action, resource_type, organization_id, created_at')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  const rows = data ?? [];
+  const orgIds = [...new Set(rows.map((r) => r.organization_id).filter(Boolean))] as string[];
+  const orgName = new Map<string, string>();
+  if (orgIds.length > 0) {
+    const { data: orgs } = await supabase.from('organizations').select('id, name').in('id', orgIds);
+    for (const o of orgs ?? []) orgName.set(o.id, o.name);
+  }
+  return rows.map((r) => ({
+    id: r.id,
+    action: r.action,
+    resourceType: r.resource_type,
+    orgName: r.organization_id ? (orgName.get(r.organization_id) ?? null) : null,
+    createdAt: r.created_at,
+  }));
+}

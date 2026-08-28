@@ -2,7 +2,7 @@ import 'server-only';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 
-export type HomePath = '/dashboard' | '/portal' | '/onboarding';
+export type HomePath = '/admin' | '/dashboard' | '/portal' | '/onboarding';
 
 /**
  * Is the current user a learner (linked, or invitable by a matching email on an
@@ -50,6 +50,16 @@ export async function resolveHomePath(): Promise<HomePath> {
   } = await supabase.auth.getUser();
   if (!user) return '/onboarding';
 
+  // Platform staff go straight to the admin command centre.
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('platform_role')
+    .eq('id', user.id)
+    .maybeSingle();
+  if (profile?.platform_role === 'super_admin' || profile?.platform_role === 'platform_support') {
+    return '/admin';
+  }
+
   const { data: membership } = await supabase
     .from('organization_members')
     .select('id')
@@ -58,15 +68,6 @@ export async function resolveHomePath(): Promise<HomePath> {
     .limit(1)
     .maybeSingle();
   if (membership) return '/dashboard';
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('platform_role')
-    .eq('id', user.id)
-    .maybeSingle();
-  if (profile?.platform_role === 'super_admin' || profile?.platform_role === 'platform_support') {
-    return '/dashboard';
-  }
 
   if (await isLinkedLearner()) return '/portal';
   return '/onboarding';
