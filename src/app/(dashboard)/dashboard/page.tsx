@@ -3,7 +3,9 @@ import { Users, GraduationCap, CalendarCheck, Wallet, TrendingUp } from 'lucide-
 import { getAuthContext } from '@/lib/auth/context';
 import { createClient } from '@/lib/supabase/server';
 import { getActiveLearnerCount, getLearnerLimit } from '@/lib/entitlements/service';
+import { getOrgPerformanceTrend } from '@/services/progress';
 import { StatCard } from '@/components/dashboard/stat-card';
+import { PerformanceChart } from '@/components/dashboard/performance-chart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const metadata: Metadata = { title: 'Dashboard' };
@@ -18,23 +20,26 @@ export default async function DashboardPage() {
   const organizationId = ctx!.organizationId!;
   const supabase = await createClient();
 
-  const [activeLearners, learnerLimit, classesRes, todayAttendanceRes] = await Promise.all([
-    getActiveLearnerCount(organizationId),
-    getLearnerLimit(organizationId),
-    supabase
-      .from('classes')
-      .select('id', { count: 'exact', head: true })
-      .eq('organization_id', organizationId)
-      .eq('status', 'active'),
-    supabase
-      .from('attendance')
-      .select('id', { count: 'exact', head: true })
-      .eq('organization_id', organizationId)
-      .eq('session_date', new Date().toISOString().slice(0, 10)),
-  ]);
+  const [activeLearners, learnerLimit, classesRes, todayAttendanceRes, trend] =
+    await Promise.all([
+      getActiveLearnerCount(organizationId),
+      getLearnerLimit(organizationId),
+      supabase
+        .from('classes')
+        .select('id', { count: 'exact', head: true })
+        .eq('organization_id', organizationId)
+        .eq('status', 'active'),
+      supabase
+        .from('attendance')
+        .select('id', { count: 'exact', head: true })
+        .eq('organization_id', organizationId)
+        .eq('session_date', new Date().toISOString().slice(0, 10)),
+      getOrgPerformanceTrend(),
+    ]);
 
   const seatUsage =
     learnerLimit === null ? 'Unlimited' : `${activeLearners} / ${learnerLimit} seats`;
+  const hasTrendData = trend.some((t) => t.value !== null);
 
   return (
     <div className="space-y-8">
@@ -70,10 +75,14 @@ export default async function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Performance trends appear here as learners complete assessments and assignments.
-              Add learners and record results to populate this chart.
-            </p>
+            {hasTrendData ? (
+              <PerformanceChart data={trend} />
+            ) : (
+              <div className="flex h-64 items-center justify-center text-center text-sm text-muted-foreground">
+                Performance trends appear here once you grade assignments. Set and grade work to
+                populate this chart.
+              </div>
+            )}
           </CardContent>
         </Card>
         <Card>

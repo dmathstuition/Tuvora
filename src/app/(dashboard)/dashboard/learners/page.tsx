@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { Users } from 'lucide-react';
 import { getAuthContext } from '@/lib/auth/context';
 import { listLearners } from '@/services/learners';
@@ -74,7 +75,9 @@ export default async function LearnersPage() {
                 {learners.map((l) => (
                   <tr key={l.id} className="border-b last:border-0 hover:bg-muted/40">
                     <td className="px-4 py-3 font-medium">
-                      {l.first_name} {l.last_name}
+                      <Link href={`/dashboard/learners/${l.id}`} className="hover:underline">
+                        {l.first_name} {l.last_name}
+                      </Link>
                     </td>
                     <td className="hidden px-4 py-3 text-muted-foreground sm:table-cell">
                       {l.email ?? '—'}
