@@ -112,6 +112,29 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['organization_members']['Insert']>;
         Relationships: [];
       };
+      organization_invitations: {
+        Row: {
+          id: string;
+          organization_id: string;
+          email: string;
+          role: 'owner' | 'admin' | 'tutor' | 'assistant' | 'accountant' | 'staff';
+          token: string;
+          invited_by: string | null;
+          accepted_at: string | null;
+          expires_at: string;
+          created_at: string;
+        };
+        Insert: {
+          organization_id: string;
+          email: string;
+          role: 'owner' | 'admin' | 'tutor' | 'assistant' | 'accountant' | 'staff';
+          token: string;
+          invited_by?: string | null;
+          expires_at?: string;
+        };
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
       subscription_plans: {
         Row: {
           id: string;
