@@ -1,16 +1,61 @@
 import type { Metadata } from 'next';
 import { ToggleRight } from 'lucide-react';
-import { AdminPlaceholder } from '@/components/admin/admin-placeholder';
+import { listFeatures, viewerIsSuperAdmin } from '@/services/admin';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/ui/empty-state';
+import { FeatureForm } from './feature-form';
 
 export const metadata: Metadata = { title: 'Admin · Features' };
 
-export default function Page() {
+export default async function AdminFeaturesPage() {
+  const [features, canWrite] = await Promise.all([listFeatures(), viewerIsSuperAdmin()]);
+
   return (
-    <AdminPlaceholder
-      title="Features"
-      description="The feature catalogue that plans grant."
-      icon={ToggleRight}
-      points={['Create and edit platform features', 'Boolean / numeric / unlimited types', 'Attach features to plans']}
-    />
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Features</h1>
+          <p className="text-sm text-muted-foreground">
+            The catalogue of capabilities that plans grant. {features.length} features.
+          </p>
+        </div>
+        {canWrite && <FeatureForm />}
+      </div>
+
+      {features.length === 0 ? (
+        <EmptyState icon={ToggleRight} title="No features yet" description="Seed the catalogue or add a feature to get started." />
+      ) : (
+        <Card>
+          <CardContent className="overflow-x-auto p-0">
+            <table className="w-full min-w-[560px] text-sm">
+              <thead className="border-b text-left text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Feature</th>
+                  <th className="px-4 py-3 font-medium">Slug</th>
+                  <th className="px-4 py-3 font-medium">Type</th>
+                  <th className="px-4 py-3 font-medium">In plans</th>
+                </tr>
+              </thead>
+              <tbody>
+                {features.map((f) => (
+                  <tr key={f.id} className="border-b last:border-0 hover:bg-muted/40">
+                    <td className="px-4 py-3">
+                      <p className="font-medium">{f.name}</p>
+                      {f.description && <p className="text-xs text-muted-foreground">{f.description}</p>}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{f.slug}</td>
+                    <td className="px-4 py-3">
+                      <Badge variant="secondary">{f.type}</Badge>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">{f.plans}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }

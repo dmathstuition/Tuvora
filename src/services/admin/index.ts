@@ -348,3 +348,176 @@ export async function listAuditLogs(limit = 100): Promise<AuditRow[]> {
     createdAt: r.created_at,
   }));
 }
+
+// ---------------------------------------------------------------------------
+// Revenue analytics
+// ---------------------------------------------------------------------------
+
+export interface RevenueByPlan {
+  name: string;
+  currency: string;
+  subscribers: number;
+  mrrMinor: number;
+}
+export interface RevenueMetrics {
+  mrrByCurrency: { currency: string; minor: number }[];
+  arrByCurrency: { currency: string; minor: number }[];
+  arpuMinor: number;
+  arpuCurrency: string;
+  payingSubscribers: number;
+  collectedByCurrency: { currency: string; minor: number }[];
+  byPlan: RevenueByPlan[];
+  trend: RevenuePoint[];
+}
+
+export async function getRevenueMetrics(): Promise<RevenueMetrics> {
+  const supabase = await createClient();
+  const [{ data: subs }, { data: plans }, { data: payments }, trend] = await Promise.all([
+    supabase.from('subscriptions').select('plan_id, status').eq('status', 'active'),
+    supabase.from('subscription_plans').select('id, name, monthly_price_minor, currency'),
+    supabase.from('payments').select('amount_minor, currency, status, direction').eq('direction', 'platform').eq('status', 'succeeded'),
+    getRevenueTrend(),
+  ]);
+
+  const plan = new Map((plans ?? []).map((p) => [p.id, p]));
+  const mrr = new Map<string, number>();
+  const planAgg = new Map<string, RevenueByPlan>();
+  let payingSubscribers = 0;
+
+  for (const s of subs ?? []) {
+    const p = plan.get(s.plan_id);
+    if (!p) continue;
+    payingSubscribers += 1;
+    mrr.set(p.currency, (mrr.get(p.currency) ?? 0) + p.monthly_price_minor);
+    const cur = planAgg.get(p.id) ?? { name: p.name, currency: p.currency, subscribers: 0, mrrMinor: 0 };
+    cur.subscribers += 1;
+    cur.mrrMinor += p.monthly_price_minor;
+    planAgg.set(p.id, cur);
+  }
+
+  const collected = new Map<string, number>();
+  for (const pay of payments ?? []) collected.set(pay.currency, (collected.get(pay.currency) ?? 0) + pay.amount_minor);
+
+  const mrrByCurrency = [...mrr.entries()].map(([currency, minor]) => ({ currency, minor })).sort((a, b) => b.minor - a.minor);
+  const top = mrrByCurrency[0];
+
+  return {
+    mrrByCurrency,
+    arrByCurrency: mrrByCurrency.map((m) => ({ currency: m.currency, minor: m.minor * 12 })),
+    arpuMinor: top && payingSubscribers ? Math.round(top.minor / payingSubscribers) : 0,
+    arpuCurrency: top?.currency ?? 'USD',
+    payingSubscribers,
+    collectedByCurrency: [...collected.entries()].map(([currency, minor]) => ({ currency, minor })),
+    byPlan: [...planAgg.values()].sort((a, b) => b.mrrMinor - a.mrrMinor),
+    trend,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Churn & retention
+// ---------------------------------------------------------------------------
+
+export interface ChurnMetrics {
+  statusCounts: { status: string; count: number }[];
+  active: number;
+  trialing: number;
+  pastDue: number;
+  cancelled: number;
+  expired: number;
+  churnRatePct: number;
+  trialConversionPct: number;
+  totalSubscriptions: number;
+}
+
+export async function getChurnMetrics(): Promise<ChurnMetrics> {
+  const supabase = await createClient();
+  const { data } = await supabase.from('subscriptions').select('status');
+  const counts = new Map<string, number>();
+  for (const s of data ?? []) counts.set(s.status, (counts.get(s.status) ?? 0) + 1);
+
+  const g = (k: string) => counts.get(k) ?? 0;
+  const active = g('active');
+  const trialing = g('trialing');
+  const pastDue = g('past_due');
+  const cancelled = g('cancelled');
+  const expired = g('expired');
+  const churnedBase = active + pastDue + cancelled + expired;
+  const converted = active + cancelled + expired; // trials that became paid at some point (approx)
+  const trialBase = converted + trialing;
+
+  return {
+    statusCounts: [...counts.entries()].map(([status, count]) => ({ status, count })),
+    active,
+    trialing,
+    pastDue,
+    cancelled,
+    expired,
+    churnRatePct: churnedBase ? Math.round(((cancelled + expired) / churnedBase) * 100) : 0,
+    trialConversionPct: trialBase ? Math.round((converted / trialBase) * 100) : 0,
+    totalSubscriptions: (data ?? []).length,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Features & coupons management
+// ---------------------------------------------------------------------------
+
+export interface FeatureRow {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  type: 'boolean' | 'numeric' | 'unlimited';
+  plans: number;
+}
+
+export async function listFeatures(): Promise<FeatureRow[]> {
+  const supabase = await createClient();
+  const [{ data: features }, { data: planFeatures }] = await Promise.all([
+    supabase.from('features').select('id, slug, name, description, type').order('name'),
+    supabase.from('plan_features').select('feature_id'),
+  ]);
+  const usage = new Map<string, number>();
+  for (const pf of planFeatures ?? []) usage.set(pf.feature_id, (usage.get(pf.feature_id) ?? 0) + 1);
+  return (features ?? []).map((f) => ({
+    id: f.id,
+    slug: f.slug,
+    name: f.name,
+    description: f.description,
+    type: f.type,
+    plans: usage.get(f.id) ?? 0,
+  }));
+}
+
+export interface CouponRow {
+  id: string;
+  code: string;
+  description: string | null;
+  discountType: 'percent' | 'fixed';
+  discountValue: number;
+  currency: string | null;
+  maxRedemptions: number | null;
+  timesRedeemed: number;
+  isActive: boolean;
+  expiresAt: string | null;
+}
+
+export async function listCoupons(): Promise<CouponRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('coupons')
+    .select('id, code, description, discount_type, discount_value, currency, max_redemptions, times_redeemed, is_active, expires_at')
+    .order('created_at', { ascending: false });
+  return (data ?? []).map((c) => ({
+    id: c.id,
+    code: c.code,
+    description: c.description,
+    discountType: c.discount_type,
+    discountValue: c.discount_value,
+    currency: c.currency,
+    maxRedemptions: c.max_redemptions,
+    timesRedeemed: c.times_redeemed,
+    isActive: c.is_active,
+    expiresAt: c.expires_at,
+  }));
+}

@@ -17,6 +17,7 @@ PostgreSQL on Supabase. Schema is defined as ordered SQL migrations in
 | `0008_learner_billing.sql` | Per-learner monthly billing (`learner_billing`); drops the seat-cap trigger. Free trial = 1 learner, 1 month. Additive. |
 | `0009_rewards_and_gamification.sql` | Reward/sanction points ledger (`reward_events`) + learner avatar/theme. Additive. |
 | `0010_learner_portal_invites.sql` | Token-based learner portal invitations (`learner_portal_invites`). Additive. |
+| `0011_coupons.sql` | Platform discount `coupons` (super-admin managed). Additive. |
 
 Seed the catalogue with `supabase/seed/seed.sql` (features + plans + plan_features).
 

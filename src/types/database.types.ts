@@ -185,6 +185,36 @@ export interface Database {
         Update: Record<string, unknown>;
         Relationships: [];
       };
+      coupons: {
+        Row: {
+          id: string;
+          code: string;
+          description: string | null;
+          discount_type: 'percent' | 'fixed';
+          discount_value: number;
+          currency: string | null;
+          duration: string;
+          max_redemptions: number | null;
+          times_redeemed: number;
+          is_active: boolean;
+          expires_at: string | null;
+          created_by: string | null;
+        } & Timestamps;
+        Insert: {
+          code: string;
+          discount_type: 'percent' | 'fixed';
+          discount_value: number;
+          description?: string | null;
+          currency?: string | null;
+          duration?: string;
+          max_redemptions?: number | null;
+          is_active?: boolean;
+          expires_at?: string | null;
+          created_by?: string | null;
+        };
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
       plan_prices: {
         Row: {
           id: string;
