@@ -7,6 +7,7 @@ import {
   ClipboardList,
   CalendarCheck,
   BarChart3,
+  Trophy,
   FolderOpen,
   MessagesSquare,
   Calendar,
@@ -55,6 +56,7 @@ export const DASHBOARD_NAV: NavSection[] = [
     label: 'Insights',
     items: [
       { title: 'Reports', href: '/dashboard/reports', icon: BarChart3, permission: 'reports.view' },
+      { title: 'Leaderboard', href: '/dashboard/leaderboard', icon: Trophy, permission: 'rewards.view' },
       { title: 'Resources', href: '/dashboard/resources', icon: FolderOpen, permission: 'resources.view' },
     ],
   },

@@ -234,6 +234,8 @@ export interface Database {
           status: 'active' | 'inactive' | 'archived';
           enrolled_at: string;
           archived_at: string | null;
+          avatar_key: string | null;
+          theme_key: string | null;
         } & Timestamps;
         Insert: {
           organization_id: string;
@@ -246,7 +248,33 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['learners']['Insert']> & {
           status?: 'active' | 'inactive' | 'archived';
           archived_at?: string | null;
+          avatar_key?: string | null;
+          theme_key?: string | null;
         };
+        Relationships: [];
+      };
+      reward_events: {
+        Row: {
+          id: string;
+          organization_id: string;
+          learner_id: string;
+          kind: 'reward' | 'sanction';
+          points: number;
+          category: string | null;
+          reason: string | null;
+          awarded_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          organization_id: string;
+          learner_id: string;
+          kind: 'reward' | 'sanction';
+          points: number;
+          category?: string | null;
+          reason?: string | null;
+          awarded_by?: string | null;
+        };
+        Update: Record<string, unknown>;
         Relationships: [];
       };
       classes: {
@@ -450,6 +478,7 @@ export interface Database {
       org_free_trial_used: { Args: { org: string }; Returns: boolean };
       learner_account_open: { Args: { learner: string }; Returns: boolean };
       get_open_learner_count: { Args: { org: string }; Returns: number };
+      learner_points: { Args: { learner: string }; Returns: number };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

@@ -1,8 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, TrendingUp, FileBarChart } from 'lucide-react';
+import { ArrowLeft, TrendingUp, FileBarChart, Sparkles } from 'lucide-react';
 import { getLearnerProfile } from '@/services/progress';
+import { getLearnerRewards } from '@/services/rewards';
+import { levelFromPoints } from '@/constants/gamification';
+import { can } from '@/lib/permissions';
+import { getAuthContext } from '@/lib/auth/context';
+import { AwardPoints } from './award-points';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,13 +28,19 @@ export default async function LearnerProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const profile = await getLearnerProfile(id);
+  const [profile, rewards, ctx] = await Promise.all([
+    getLearnerProfile(id),
+    getLearnerRewards(id),
+    getAuthContext(),
+  ]);
   if (!profile) notFound();
 
   const { learner, classes, metrics, recentGrades, attendance, scoreTrend } = profile;
   const hasTrend = scoreTrend.some((t) => t.value !== null);
   const attendanceTotal =
     attendance.present + attendance.late + attendance.absent + attendance.excused;
+  const level = levelFromPoints(rewards.total);
+  const canReward = !!ctx && can(ctx, 'rewards.manage');
 
   return (
     <div className="space-y-6">
@@ -58,11 +69,14 @@ export default async function LearnerProfilePage({
               </p>
             </div>
           </div>
-          <Button asChild variant="outline">
-            <Link href={`/dashboard/learners/${learner.id}/report`}>
-              <FileBarChart className="h-4 w-4" /> Progress report
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {canReward && <AwardPoints learnerId={learner.id} />}
+            <Button asChild variant="outline">
+              <Link href={`/dashboard/learners/${learner.id}/report`}>
+                <FileBarChart className="h-4 w-4" /> Progress report
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -77,6 +91,50 @@ export default async function LearnerProfilePage({
         />
         <StatCard label="Classes" value={classes.length} />
       </div>
+
+      {/* Rewards & points */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Sparkles className="h-4 w-4" /> Rewards &amp; points
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap items-center gap-6">
+            <div className="text-center">
+              <p className="text-3xl font-bold">{rewards.total}</p>
+              <p className="text-xs text-muted-foreground">points</p>
+            </div>
+            <div className="min-w-40 flex-1">
+              <div className="mb-1 flex items-center justify-between text-sm">
+                <span className="font-medium">Level {level.level}</span>
+                <span className="text-muted-foreground">
+                  {level.intoLevel}/{level.forNext} to level {level.level + 1}
+                </span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div className="h-full bg-primary" style={{ width: `${level.progress}%` }} />
+              </div>
+            </div>
+          </div>
+          {rewards.recent.length > 0 && (
+            <ul className="mt-4 space-y-1.5 text-sm">
+              {rewards.recent.slice(0, 5).map((r) => (
+                <li key={r.id} className="flex items-center justify-between">
+                  <span className="text-muted-foreground">
+                    {r.reason || r.category || (r.kind === 'reward' ? 'Reward' : 'Sanction')}
+                  </span>
+                  <span
+                    className={r.points >= 0 ? 'font-medium text-success' : 'font-medium text-destructive'}
+                  >
+                    {r.points >= 0 ? `+${r.points}` : r.points}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Score trend */}

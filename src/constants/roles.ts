@@ -65,6 +65,9 @@ export const PERMISSIONS = [
   'grades.view',
   'grades.manage',
   'progress.view',
+  // Rewards, sanctions & leaderboard (gamification)
+  'rewards.view',
+  'rewards.manage',
   // Reports & resources
   'reports.view',
   'reports.generate',
@@ -126,6 +129,8 @@ export const ROLE_PERMISSIONS: Record<OrgRole, readonly Permission[] | '*'> = {
     'grades.view',
     'grades.manage',
     'progress.view',
+    'rewards.view',
+    'rewards.manage',
     'reports.view',
     'reports.generate',
     'resources.view',
@@ -162,6 +167,8 @@ export const ROLE_PERMISSIONS: Record<OrgRole, readonly Permission[] | '*'> = {
     'grades.view',
     'grades.manage',
     'progress.view',
+    'rewards.view',
+    'rewards.manage',
     'reports.view',
     'reports.generate',
     'resources.view',
@@ -179,6 +186,8 @@ export const ROLE_PERMISSIONS: Record<OrgRole, readonly Permission[] | '*'> = {
     'attendance.view',
     'attendance.manage',
     'grades.view',
+    'rewards.view',
+    'rewards.manage',
     'resources.view',
     'messages.view',
     'messages.send',
@@ -194,5 +203,5 @@ export const ROLE_PERMISSIONS: Record<OrgRole, readonly Permission[] | '*'> = {
     'invoices.view',
     'invoices.manage',
   ],
-  staff: ['learners.view', 'classes.view', 'calendar.view', 'messages.view'],
+  staff: ['learners.view', 'classes.view', 'calendar.view', 'messages.view', 'rewards.view'],
 };
