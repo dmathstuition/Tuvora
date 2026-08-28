@@ -1,0 +1,62 @@
+import { redirect } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
+import { getAuthContext, getProfile } from '@/lib/auth/context';
+import { listPermissions } from '@/lib/permissions';
+import { Sidebar } from '@/components/dashboard/sidebar';
+import { Topbar } from '@/components/dashboard/topbar';
+
+/**
+ * Dashboard shell. Resolves the acting user + their active organization and
+ * role entirely server-side, then renders permission-filtered navigation.
+ * Sends first-time users (no organization) to onboarding.
+ */
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const ctx = await getAuthContext();
+  if (!ctx) redirect('/login');
+  if (!ctx.organizationId || !ctx.role) redirect('/onboarding');
+
+  const supabase = await createClient();
+  const [{ data: org }, profile] = await Promise.all([
+    supabase.from('organizations').select('name').eq('id', ctx.organizationId).single(),
+    getProfile(),
+  ]);
+
+  const { data: sub } = await supabase
+    .from('subscriptions')
+    .select('status, plan_id')
+    .eq('organization_id', ctx.organizationId)
+    .in('status', ['trialing', 'active', 'past_due', 'paused'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  let planName: string | undefined;
+  if (sub?.plan_id) {
+    const { data: plan } = await supabase
+      .from('subscription_plans')
+      .select('name')
+      .eq('id', sub.plan_id)
+      .maybeSingle();
+    planName = plan?.name;
+  }
+
+  const planLabel = sub
+    ? `${planName ?? 'Plan'}${sub.status === 'trialing' ? ' · Trial' : ''}`
+    : 'No active plan';
+
+  const permissions = listPermissions(ctx);
+
+  return (
+    <div className="flex h-screen overflow-hidden">
+      <Sidebar permissions={permissions} />
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <Topbar
+          orgName={org?.name ?? 'Your organization'}
+          userName={profile?.full_name ?? profile?.email ?? null}
+          planLabel={planLabel}
+        />
+        <main className="flex-1 overflow-y-auto bg-muted/20 p-4 lg:p-8">{children}</main>
+      </div>
+    </div>
+  );
+}

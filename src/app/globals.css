@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Tuvora design tokens.
+ * Brand direction: deep navy + royal/indigo blue, white, very light neutrals.
+ * All component colors reference these semantic tokens (see tailwind.config.ts),
+ * so light/dark and future per-org branding never require touching components.
+ */
+@layer base {
+  :root {
+    /* Brand scale — royal indigo through deep navy */
+    --brand-50: 232 60% 97%;
+    --brand-100: 231 62% 94%;
+    --brand-200: 231 62% 88%;
+    --brand-300: 232 60% 78%;
+    --brand-400: 234 58% 66%;
+    --brand-500: 239 58% 57%; /* royal indigo (logo cap) */
+    --brand-600: 243 55% 50%;
+    --brand-700: 244 52% 42%;
+    --brand-800: 232 47% 27%;
+    --brand-900: 224 55% 18%; /* deep navy (wordmark) */
+    --brand-950: 226 60% 12%;
+
+    /* Semantic — light theme */
+    --background: 0 0% 100%;
+    --foreground: 224 40% 14%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 224 40% 14%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 40% 14%;
+
+    --primary: 239 58% 57%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 226 30% 96%;
+    --secondary-foreground: 224 45% 20%;
+
+    --muted: 220 20% 96%;
+    --muted-foreground: 220 12% 46%;
+
+    --accent: 231 62% 94%;
+    --accent-foreground: 244 52% 42%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 60% 40%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 30 40% 12%;
+
+    --border: 220 18% 90%;
+    --input: 220 18% 90%;
+    --ring: 239 58% 57%;
+
+    --radius: 0.625rem;
+  }
+
+  .dark {
+    --background: 226 44% 8%;
+    --foreground: 220 20% 96%;
+
+    --card: 225 40% 11%;
+    --card-foreground: 220 20% 96%;
+
+    --popover: 225 40% 11%;
+    --popover-foreground: 220 20% 96%;
+
+    --primary: 234 58% 66%;
+    --primary-foreground: 226 60% 10%;
+
+    --secondary: 225 30% 16%;
+    --secondary-foreground: 220 20% 92%;
+
+    --muted: 225 28% 16%;
+    --muted-foreground: 220 14% 62%;
+
+    --accent: 232 40% 22%;
+    --accent-foreground: 231 62% 90%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 50% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 90% 55%;
+    --warning-foreground: 30 40% 10%;
+
+    --border: 225 24% 20%;
+    --input: 225 24% 22%;
+    --ring: 234 58% 66%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
+  }
+}
