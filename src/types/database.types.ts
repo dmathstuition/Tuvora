@@ -225,12 +225,43 @@ export interface Database {
         Row: {
           id: string;
           organization_id: string;
+          subject_id: string | null;
           name: string;
+          description: string | null;
           status: 'draft' | 'active' | 'completed' | 'archived';
           mode: 'one_to_one' | 'group';
           tutor_id: string | null;
+          capacity: number | null;
+          start_date: string | null;
+          end_date: string | null;
         } & Timestamps;
-        Insert: { organization_id: string; name: string } & Record<string, unknown>;
+        Insert: {
+          organization_id: string;
+          name: string;
+          subject_id?: string | null;
+          description?: string | null;
+          status?: 'draft' | 'active' | 'completed' | 'archived';
+          mode?: 'one_to_one' | 'group';
+          capacity?: number | null;
+          start_date?: string | null;
+          end_date?: string | null;
+        } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      class_members: {
+        Row: {
+          id: string;
+          organization_id: string;
+          class_id: string;
+          learner_id: string;
+          enrolled_at: string;
+        };
+        Insert: {
+          organization_id: string;
+          class_id: string;
+          learner_id: string;
+        } & Record<string, unknown>;
         Update: Record<string, unknown>;
         Relationships: [];
       };
