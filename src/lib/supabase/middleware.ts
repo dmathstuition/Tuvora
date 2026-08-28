@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { publicEnv } from '@/lib/public-env';
 import type { Database } from '@/types/database.types';
 
-const PROTECTED_PREFIXES = ['/dashboard', '/admin', '/onboarding'];
+const PROTECTED_PREFIXES = ['/dashboard', '/admin', '/onboarding', '/portal'];
 
 function isProtectedPath(path: string): boolean {
   return PROTECTED_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
