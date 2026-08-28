@@ -19,6 +19,62 @@
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
+-- Membership / permission auth helpers, SECURITY DEFINER to avoid RLS recursion.
+-- Defined here (not in 0001) because they are `LANGUAGE sql` — Postgres
+-- validates the function body at CREATE time, so the tables they read
+-- (profiles, organization_members) must already exist. 0006 is also the first
+-- place they are used (the policies below).
+-- ----------------------------------------------------------------------------
+
+-- Is the current user a platform super admin? Read from profiles, not the JWT,
+-- so revoking the role takes effect immediately.
+create or replace function public.is_super_admin()
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid() and p.platform_role = 'super_admin'
+  );
+$$;
+
+create or replace function public.is_platform_staff()
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid()
+      and p.platform_role in ('super_admin', 'platform_support')
+  );
+$$;
+
+-- Is the current user an active member of the given organization?
+create or replace function public.is_org_member(org uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.organization_members m
+    where m.organization_id = org
+      and m.user_id = auth.uid()
+      and m.status = 'active'
+  );
+$$;
+
+-- Does the current user hold ANY of the given roles in the organization?
+create or replace function public.has_org_role(org uuid, roles org_role[])
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.organization_members m
+    where m.organization_id = org
+      and m.user_id = auth.uid()
+      and m.status = 'active'
+      and m.role = any(roles)
+  );
+$$;
+
+-- Convenience: is the current user an owner/admin (can manage) of the org?
+create or replace function public.can_manage_org(org uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select public.has_org_role(org, array['owner','admin']::org_role[]);
+$$;
+
+-- ----------------------------------------------------------------------------
 -- Portal access helpers (learner / parent), SECURITY DEFINER to avoid recursion.
 -- ----------------------------------------------------------------------------
 create or replace function public.is_self_learner(learner uuid)

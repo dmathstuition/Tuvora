@@ -91,79 +91,9 @@ begin
 end;
 $$;
 
--- ----------------------------------------------------------------------------
--- Auth helpers
--- ----------------------------------------------------------------------------
-
--- Is the current user a platform super admin? Read from profiles, not JWT,
--- so revoking the role takes effect immediately.
-create or replace function public.is_super_admin()
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1 from public.profiles p
-    where p.id = auth.uid() and p.platform_role = 'super_admin'
-  );
-$$;
-
-create or replace function public.is_platform_staff()
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1 from public.profiles p
-    where p.id = auth.uid()
-      and p.platform_role in ('super_admin', 'platform_support')
-  );
-$$;
-
--- Is the current user an active member of the given organization?
-create or replace function public.is_org_member(org uuid)
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1 from public.organization_members m
-    where m.organization_id = org
-      and m.user_id = auth.uid()
-      and m.status = 'active'
-  );
-$$;
-
--- Does the current user hold ANY of the given roles in the organization?
-create or replace function public.has_org_role(org uuid, roles org_role[])
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1 from public.organization_members m
-    where m.organization_id = org
-      and m.user_id = auth.uid()
-      and m.status = 'active'
-      and m.role = any(roles)
-  );
-$$;
-
--- Convenience: is the current user an owner/admin (can manage) of the org?
-create or replace function public.can_manage_org(org uuid)
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select public.has_org_role(org, array['owner','admin']::org_role[]);
-$$;
+-- NOTE: The membership/permission auth helper functions (is_super_admin,
+-- is_platform_staff, is_org_member, has_org_role, can_manage_org) are defined in
+-- 0006_rls.sql. They are `LANGUAGE sql`, whose body is validated at CREATE time,
+-- so they must be created AFTER the tables they read (profiles,
+-- organization_members) exist — which is 0002. 0006 is the first migration that
+-- uses them (RLS policies), so they live there alongside the portal helpers.

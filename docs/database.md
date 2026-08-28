@@ -7,12 +7,12 @@ PostgreSQL on Supabase. Schema is defined as ordered SQL migrations in
 
 | File | Contents |
 | --- | --- |
-| `0001_extensions_and_helpers.sql` | Extensions, enums, `updated_at` trigger, RLS helper functions |
+| `0001_extensions_and_helpers.sql` | Extensions, enums, `updated_at` trigger |
 | `0002_core_tenancy.sql` | `profiles`, `organizations`, `organization_members`, invitations; new-user trigger |
 | `0003_billing_and_entitlements.sql` | `features`, `subscription_plans`, `plan_features`, `subscriptions`, items, usage, `payments`, `invoices`, `billing_events` |
 | `0004_lms_domain.sql` | subjects, learners, parents, courses/modules/lessons, classes, assignments, assessments, attendance, grading, progress, resources, messaging, notifications, calendar, files, audit logs |
 | `0005_learner_limits.sql` | `get_active_learner_count`, `get_learner_limit`, `can_add_learner`, `enforce_learner_limit` trigger |
-| `0006_rls.sql` | Row Level Security for every table |
+| `0006_rls.sql` | SECURITY DEFINER auth/portal helper functions + Row Level Security for every table |
 
 Seed the catalogue with `supabase/seed/seed.sql` (features + plans + plan_features).
 
