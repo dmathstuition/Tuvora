@@ -78,11 +78,19 @@ export async function getSubscriptionOverview(): Promise<SubscriptionOverview | 
     planName = plan?.name ?? null;
   }
 
+  // Price plans in the organization's own currency.
+  const { data: orgRow } = await supabase
+    .from('organizations')
+    .select('currency')
+    .eq('id', ctx.organizationId)
+    .maybeSingle();
+  const orgCurrency = orgRow?.currency ?? 'USD';
+
   const [entitlements, active, limit, plans] = await Promise.all([
     getEntitlements(ctx.organizationId),
     getActiveLearnerCount(ctx.organizationId),
     getLearnerLimit(ctx.organizationId),
-    getPublicPlans(),
+    getPublicPlans(orgCurrency),
   ]);
 
   const features = FEATURE_SLUGS.map((slug) => ({

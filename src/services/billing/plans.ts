@@ -12,18 +12,22 @@ export interface PublicPlan {
   currency: string;
   includedLearners: number;
   additionalLearnerPriceMinor: number;
+  perLearnerMonthlyPriceMinor: number;
   isRecommended: boolean;
   trialDays: number;
   features: Array<{ slug: FeatureSlug; name: string; value: EntitlementValue }>;
 }
 
 /**
- * Fetch active, public plans with their feature entitlements for the marketing
- * pricing page. Reads entirely from the database (admin-configured) — no prices
- * or plan names are hardcoded. Returns [] if Supabase is not yet configured so
- * the page degrades gracefully instead of crashing.
+ * Fetch active, public plans with feature entitlements, priced in `currency`.
+ *
+ * Prices come from plan_prices for the requested currency; when a plan has no
+ * row for that currency we fall back to the plan's base columns (which are
+ * treated as the plan's default currency). Everything is admin-configured in
+ * the database — no prices or plan names are hardcoded. Returns [] if Supabase
+ * is not configured so the page degrades gracefully.
  */
-export async function getPublicPlans(): Promise<PublicPlan[]> {
+export async function getPublicPlans(currency = 'USD'): Promise<PublicPlan[]> {
   try {
     const supabase = await createClient();
     const { data: plans, error } = await supabase
@@ -35,40 +39,49 @@ export async function getPublicPlans(): Promise<PublicPlan[]> {
 
     if (error || !plans) return [];
 
-    const { data: planFeatures } = await supabase
-      .from('plan_features')
-      .select('plan_id, value, feature:features(slug, name, type)');
+    const [{ data: planFeatures }, { data: prices }] = await Promise.all([
+      supabase.from('plan_features').select('plan_id, value, feature:features(slug, name, type)'),
+      supabase.from('plan_prices').select('*').eq('currency', currency),
+    ]);
 
-    return plans.map((p) => ({
-      id: p.id,
-      slug: p.slug,
-      name: p.name,
-      description: p.description,
-      monthlyPriceMinor: p.monthly_price_minor,
-      yearlyPriceMinor: p.yearly_price_minor,
-      currency: p.currency,
-      includedLearners: p.included_learners,
-      additionalLearnerPriceMinor: p.additional_learner_price_minor,
-      isRecommended: p.is_recommended,
-      trialDays: p.trial_days,
-      features: (planFeatures ?? [])
-        .filter((pf) => pf.plan_id === p.id)
-        .map((pf) => {
-          const feature = pf.feature as unknown as {
-            slug: FeatureSlug;
-            name: string;
-            type: 'boolean' | 'numeric' | 'unlimited';
-          } | null;
-          return feature
-            ? {
-                slug: feature.slug,
-                name: feature.name,
-                value: parseEntitlement(feature.type, pf.value),
-              }
-            : null;
-        })
-        .filter((x): x is NonNullable<typeof x> => x !== null),
-    }));
+    const priceByPlan = new Map((prices ?? []).map((p) => [p.plan_id, p]));
+
+    return plans.map((p) => {
+      const price = priceByPlan.get(p.id);
+      return {
+        id: p.id,
+        slug: p.slug,
+        name: p.name,
+        description: p.description,
+        currency: price ? currency : p.currency,
+        monthlyPriceMinor: price ? price.monthly_price_minor : p.monthly_price_minor,
+        yearlyPriceMinor: price ? price.yearly_price_minor : p.yearly_price_minor,
+        includedLearners: p.included_learners,
+        additionalLearnerPriceMinor: price
+          ? price.additional_learner_price_minor
+          : p.additional_learner_price_minor,
+        perLearnerMonthlyPriceMinor: price ? price.per_learner_monthly_price_minor : 0,
+        isRecommended: p.is_recommended,
+        trialDays: p.trial_days,
+        features: (planFeatures ?? [])
+          .filter((pf) => pf.plan_id === p.id)
+          .map((pf) => {
+            const feature = pf.feature as unknown as {
+              slug: FeatureSlug;
+              name: string;
+              type: 'boolean' | 'numeric' | 'unlimited';
+            } | null;
+            return feature
+              ? {
+                  slug: feature.slug,
+                  name: feature.name,
+                  value: parseEntitlement(feature.type, pf.value),
+                }
+              : null;
+          })
+          .filter((x): x is NonNullable<typeof x> => x !== null),
+      };
+    });
   } catch {
     return [];
   }

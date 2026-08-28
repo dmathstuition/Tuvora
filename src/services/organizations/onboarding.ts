@@ -35,10 +35,13 @@ export async function createOrganizationAction(
   const parsed = createOrganizationSchema.safeParse({
     name: formData.get('name'),
     ownerName: formData.get('ownerName'),
-    type: formData.get('type'),
+    businessModel: formData.get('businessModel'),
     country: formData.get('country') || undefined,
     currency: (formData.get('currency') as string) || 'USD',
     timezone: (formData.get('timezone') as string) || 'UTC',
+    portalName: formData.get('portalName') || '',
+    portalWelcome: formData.get('portalWelcome') || '',
+    themeColor: formData.get('themeColor') || '',
     subjects: subjectsRaw
       .split(',')
       .map((s) => s.trim())
@@ -54,17 +57,28 @@ export async function createOrganizationAction(
   const base = slugify(parsed.data.name) || 'org';
   const slug = `${base}-${Math.random().toString(36).slice(2, 7)}`;
 
+  const employsTutors = parsed.data.businessModel === 'business';
+  const orgType = employsTutors ? 'tutoring_business' : 'independent_tutor';
+  const portalPreferences = {
+    displayName: parsed.data.portalName || parsed.data.name,
+    welcome: parsed.data.portalWelcome || null,
+    themeColor: parsed.data.themeColor || null,
+  };
+
   const { data: org, error: orgError } = await admin
     .from('organizations')
     .insert({
       name: parsed.data.name,
       slug,
-      type: parsed.data.type,
+      type: orgType,
       owner_id: user.id,
       country: parsed.data.country ?? null,
       currency: parsed.data.currency,
       timezone: parsed.data.timezone,
       subjects: parsed.data.subjects,
+      employs_tutors: employsTutors,
+      portal_preferences: portalPreferences,
+      brand_color: parsed.data.themeColor || null,
     })
     .select('id')
     .single();

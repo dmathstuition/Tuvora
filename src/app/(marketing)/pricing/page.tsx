@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { formatMoney } from '@/lib/utils';
 import { hasFeature, type EntitlementSet } from '@/lib/entitlements/engine';
+import { CURRENCIES } from '@/constants/currencies';
 
 export const metadata: Metadata = { title: 'Pricing' };
 
@@ -18,17 +19,39 @@ function describeFeature(name: string, value: EntitlementSet[keyof EntitlementSe
   return name;
 }
 
-export default async function PricingPage() {
-  const plans = await getPublicPlans();
+export default async function PricingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ currency?: string }>;
+}) {
+  const { currency: currencyParam } = await searchParams;
+  const currency = CURRENCIES.some((c) => c.code === currencyParam) ? currencyParam! : 'USD';
+  const plans = await getPublicPlans(currency);
 
   return (
     <div className="container py-20">
       <div className="mx-auto max-w-2xl text-center">
-        <h1 className="text-4xl font-bold tracking-tight">Simple, seat-based pricing</h1>
+        <h1 className="text-4xl font-bold tracking-tight">Pricing that grows with your learners</h1>
         <p className="mt-3 text-muted-foreground">
-          Start with a base plan that includes a set number of learners. Add more learner seats
-          only as you grow. Prices are configured by Tuvora and shown live from our catalogue.
+          Start with a base plan that includes a set number of learners, then add more as you grow.
+          Prices are configured by Tuvora and shown live from our catalogue.
         </p>
+        {/* Currency switcher (links preserve SSR + shareable URLs) */}
+        <div className="mt-6 inline-flex rounded-md border p-1 text-sm">
+          {CURRENCIES.map((c) => (
+            <Link
+              key={c.code}
+              href={`/pricing?currency=${c.code}`}
+              className={`rounded px-3 py-1 font-medium transition-colors ${
+                currency === c.code
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {c.symbol} {c.code}
+            </Link>
+          ))}
+        </div>
       </div>
 
       {plans.length === 0 ? (

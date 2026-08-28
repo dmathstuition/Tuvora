@@ -13,6 +13,7 @@ PostgreSQL on Supabase. Schema is defined as ordered SQL migrations in
 | `0004_lms_domain.sql` | subjects, learners, parents, courses/modules/lessons, classes, assignments, assessments, attendance, grading, progress, resources, messaging, notifications, calendar, files, audit logs |
 | `0005_learner_limits.sql` | `get_active_learner_count`, `get_learner_limit`, `can_add_learner`, `enforce_learner_limit` trigger |
 | `0006_rls.sql` | SECURITY DEFINER auth/portal helper functions + Row Level Security for every table |
+| `0007_multicurrency_and_onboarding.sql` | Org fields (`employs_tutors`, `portal_preferences`) + `plan_prices` (multi-currency: USD, NGN, …). Additive. |
 
 Seed the catalogue with `supabase/seed/seed.sql` (features + plans + plan_features).
 

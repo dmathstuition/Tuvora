@@ -58,6 +58,8 @@ export interface Database {
           logo_url: string | null;
           favicon_url: string | null;
           brand_color: string | null;
+          employs_tutors: boolean;
+          portal_preferences: Json;
           onboarding_completed_at: string | null;
           archived_at: string | null;
         } & Timestamps;
@@ -71,6 +73,11 @@ export interface Database {
           currency?: string;
           timezone?: string;
           subjects?: string[];
+          employs_tutors?: boolean;
+          portal_preferences?: Json;
+          brand_color?: string | null;
+          logo_url?: string | null;
+          favicon_url?: string | null;
         };
         Update: Partial<Database['public']['Tables']['organizations']['Insert']> & {
           logo_url?: string | null;
@@ -152,6 +159,27 @@ export interface Database {
           created_at: string;
         };
         Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      plan_prices: {
+        Row: {
+          id: string;
+          plan_id: string;
+          currency: string;
+          monthly_price_minor: number;
+          yearly_price_minor: number;
+          additional_learner_price_minor: number;
+          per_learner_monthly_price_minor: number;
+        } & Timestamps;
+        Insert: {
+          plan_id: string;
+          currency: string;
+          monthly_price_minor?: number;
+          yearly_price_minor?: number;
+          additional_learner_price_minor?: number;
+          per_learner_monthly_price_minor?: number;
+        };
         Update: Record<string, unknown>;
         Relationships: [];
       };
