@@ -284,6 +284,59 @@ export interface Database {
         Update: Record<string, unknown>;
         Relationships: [];
       };
+      assignments: {
+        Row: {
+          id: string;
+          organization_id: string;
+          class_id: string | null;
+          subject_id: string | null;
+          title: string;
+          instructions: string | null;
+          status: 'draft' | 'published' | 'archived';
+          max_points: number | null;
+          allow_resubmission: boolean;
+          due_at: string | null;
+          created_by: string | null;
+        } & Timestamps;
+        Insert: {
+          organization_id: string;
+          title: string;
+          class_id?: string | null;
+          subject_id?: string | null;
+          instructions?: string | null;
+          status?: 'draft' | 'published' | 'archived';
+          max_points?: number | null;
+          allow_resubmission?: boolean;
+          due_at?: string | null;
+          created_by?: string | null;
+        } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      assignment_submissions: {
+        Row: {
+          id: string;
+          organization_id: string;
+          assignment_id: string;
+          learner_id: string;
+          status: 'assigned' | 'submitted' | 'late' | 'graded' | 'returned';
+          content: string | null;
+          submitted_at: string | null;
+          score: number | null;
+          feedback: string | null;
+          graded_by: string | null;
+          graded_at: string | null;
+          returned_at: string | null;
+        } & Timestamps;
+        Insert: {
+          organization_id: string;
+          assignment_id: string;
+          learner_id: string;
+          status?: 'assigned' | 'submitted' | 'late' | 'graded' | 'returned';
+        } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
       audit_logs: {
         Row: {
           id: string;
