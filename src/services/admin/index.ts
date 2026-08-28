@@ -521,3 +521,183 @@ export async function listCoupons(): Promise<CouponRow[]> {
     expiresAt: c.expires_at,
   }));
 }
+
+// ---------------------------------------------------------------------------
+// Tutors, learners, invoices, usage, support (platform-wide)
+// ---------------------------------------------------------------------------
+
+export interface TutorRow {
+  id: string;
+  name: string | null;
+  email: string;
+  role: string;
+  orgName: string;
+}
+
+export async function listTutors(limit = 200): Promise<TutorRow[]> {
+  const supabase = await createClient();
+  const { data: members } = await supabase
+    .from('organization_members')
+    .select('id, user_id, role, organization_id, status')
+    .in('role', ['owner', 'admin', 'tutor', 'assistant'])
+    .neq('status', 'removed')
+    .limit(limit);
+  const rows = members ?? [];
+  if (rows.length === 0) return [];
+
+  const [{ data: profiles }, { data: orgs }] = await Promise.all([
+    supabase.from('profiles').select('id, full_name, email').in('id', [...new Set(rows.map((m) => m.user_id))]),
+    supabase.from('organizations').select('id, name').in('id', [...new Set(rows.map((m) => m.organization_id))]),
+  ]);
+  const p = new Map((profiles ?? []).map((x) => [x.id, x]));
+  const o = new Map((orgs ?? []).map((x) => [x.id, x.name]));
+  return rows.map((m) => ({
+    id: m.id,
+    name: p.get(m.user_id)?.full_name ?? null,
+    email: p.get(m.user_id)?.email ?? '—',
+    role: m.role,
+    orgName: o.get(m.organization_id) ?? 'Organization',
+  }));
+}
+
+export interface AdminLearnerRow {
+  id: string;
+  name: string;
+  orgName: string;
+  status: string;
+  createdAt: string;
+}
+
+export async function listAllLearners(limit = 200): Promise<AdminLearnerRow[]> {
+  const supabase = await createClient();
+  const { data: learners } = await supabase
+    .from('learners')
+    .select('id, first_name, last_name, organization_id, status, created_at')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  const rows = learners ?? [];
+  if (rows.length === 0) return [];
+  const { data: orgs } = await supabase
+    .from('organizations')
+    .select('id, name')
+    .in('id', [...new Set(rows.map((l) => l.organization_id))]);
+  const o = new Map((orgs ?? []).map((x) => [x.id, x.name]));
+  return rows.map((l) => ({
+    id: l.id,
+    name: `${l.first_name} ${l.last_name ?? ''}`.trim(),
+    orgName: o.get(l.organization_id) ?? 'Organization',
+    status: l.status,
+    createdAt: l.created_at,
+  }));
+}
+
+export interface InvoiceRow {
+  id: string;
+  number: string;
+  orgName: string;
+  status: string;
+  totalMinor: number;
+  currency: string;
+  issuedAt: string | null;
+}
+
+export async function listInvoices(limit = 200): Promise<InvoiceRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('invoices')
+    .select('id, number, organization_id, status, total_minor, currency, issued_at, created_at')
+    .eq('direction', 'platform')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  const rows = data ?? [];
+  if (rows.length === 0) return [];
+  const { data: orgs } = await supabase
+    .from('organizations')
+    .select('id, name')
+    .in('id', [...new Set(rows.map((r) => r.organization_id))]);
+  const o = new Map((orgs ?? []).map((x) => [x.id, x.name]));
+  return rows.map((r) => ({
+    id: r.id,
+    number: r.number,
+    orgName: o.get(r.organization_id) ?? 'Organization',
+    status: r.status,
+    totalMinor: r.total_minor,
+    currency: r.currency,
+    issuedAt: r.issued_at ?? r.created_at,
+  }));
+}
+
+export interface UsageAnalytics {
+  organizations: number;
+  activeOrganizations: number;
+  learners: number;
+  openLearners: number;
+  classes: number;
+  assignments: number;
+  rewardEvents: number;
+  featureAdoption: { name: string; plans: number }[];
+}
+
+export async function getUsageAnalytics(): Promise<UsageAnalytics> {
+  const supabase = await createClient();
+  const [orgs, learners, classes, assignments, rewards, subs, features] = await Promise.all([
+    count('organizations'),
+    count('learners'),
+    count('classes'),
+    count('assignments'),
+    count('reward_events'),
+    supabase.from('subscriptions').select('organization_id').in('status', ['trialing', 'active', 'past_due']),
+    listFeatures(),
+  ]);
+  const { count: openLearners } = await supabase
+    .from('learner_billing')
+    .select('id', { count: 'exact', head: true })
+    .in('status', ['trialing', 'active']);
+
+  return {
+    organizations: orgs,
+    activeOrganizations: new Set((subs.data ?? []).map((s) => s.organization_id)).size,
+    learners,
+    openLearners: openLearners ?? 0,
+    classes,
+    assignments,
+    rewardEvents: rewards,
+    featureAdoption: features
+      .filter((f) => f.plans > 0)
+      .sort((a, b) => b.plans - a.plans)
+      .map((f) => ({ name: f.name, plans: f.plans })),
+  };
+}
+
+export interface TicketRow {
+  id: string;
+  subject: string;
+  orgName: string | null;
+  status: string;
+  priority: string;
+  createdAt: string;
+}
+
+export async function listSupportTickets(limit = 200): Promise<TicketRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('support_tickets')
+    .select('id, subject, organization_id, status, priority, created_at')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  const rows = data ?? [];
+  const orgIds = [...new Set(rows.map((r) => r.organization_id).filter(Boolean))] as string[];
+  const o = new Map<string, string>();
+  if (orgIds.length > 0) {
+    const { data: orgs } = await supabase.from('organizations').select('id, name').in('id', orgIds);
+    for (const x of orgs ?? []) o.set(x.id, x.name);
+  }
+  return rows.map((r) => ({
+    id: r.id,
+    subject: r.subject,
+    orgName: r.organization_id ? (o.get(r.organization_id) ?? null) : null,
+    status: r.status,
+    priority: r.priority,
+    createdAt: r.created_at,
+  }));
+}

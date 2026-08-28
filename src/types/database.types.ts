@@ -499,6 +499,44 @@ export interface Database {
         Update: Record<string, unknown>;
         Relationships: [];
       };
+      invoices: {
+        Row: {
+          id: string;
+          organization_id: string;
+          direction: 'platform' | 'tutor';
+          number: string;
+          status: 'draft' | 'open' | 'paid' | 'void' | 'uncollectible';
+          currency: string;
+          subtotal_minor: number;
+          total_minor: number;
+          due_at: string | null;
+          issued_at: string | null;
+          paid_at: string | null;
+        } & Timestamps;
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      support_tickets: {
+        Row: {
+          id: string;
+          organization_id: string | null;
+          created_by: string | null;
+          subject: string;
+          message: string;
+          status: 'open' | 'pending' | 'resolved' | 'closed';
+          priority: 'low' | 'normal' | 'high';
+        } & Timestamps;
+        Insert: {
+          organization_id: string;
+          created_by: string;
+          subject: string;
+          message: string;
+          priority?: 'low' | 'normal' | 'high';
+        };
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
       learner_billing: {
         Row: {
           id: string;

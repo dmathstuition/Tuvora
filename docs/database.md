@@ -18,6 +18,7 @@ PostgreSQL on Supabase. Schema is defined as ordered SQL migrations in
 | `0009_rewards_and_gamification.sql` | Reward/sanction points ledger (`reward_events`) + learner avatar/theme. Additive. |
 | `0010_learner_portal_invites.sql` | Token-based learner portal invitations (`learner_portal_invites`). Additive. |
 | `0011_coupons.sql` | Platform discount `coupons` (super-admin managed). Additive. |
+| `0012_support_tickets.sql` | `support_tickets` raised by organizations, worked by platform staff. Additive. |
 
 Seed the catalogue with `supabase/seed/seed.sql` (features + plans + plan_features).
 

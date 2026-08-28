@@ -124,3 +124,25 @@ export async function toggleCouponAction(
   revalidatePath('/admin/coupons');
   return { success: true };
 }
+
+const TICKET_STATUSES = ['open', 'pending', 'resolved', 'closed'] as const;
+
+export async function updateTicketStatusAction(
+  _prev: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  const ctx = await getAuthContext();
+  const { isPlatformStaff } = await import('@/lib/permissions');
+  if (!ctx || !isPlatformStaff(ctx)) return { error: 'Platform staff access required.' };
+
+  const id = formData.get('ticketId') as string;
+  const status = formData.get('status') as (typeof TICKET_STATUSES)[number];
+  if (!id || !TICKET_STATUSES.includes(status)) return { error: 'Invalid request.' };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from('support_tickets').update({ status }).eq('id', id);
+  if (error) return { error: 'Could not update the ticket.' };
+
+  revalidatePath('/admin/support');
+  return { success: true };
+}

@@ -15,6 +15,7 @@ import {
   Receipt,
   CreditCard,
   Settings,
+  LifeBuoy,
   type LucideIcon,
 } from 'lucide-react';
 import type { Permission } from '@/constants/roles';
@@ -74,6 +75,7 @@ export const DASHBOARD_NAV: NavSection[] = [
     items: [
       { title: 'Subscription', href: '/dashboard/subscription', icon: CreditCard, permission: 'billing.view' },
       { title: 'Settings', href: '/dashboard/settings', icon: Settings },
+      { title: 'Support', href: '/dashboard/support', icon: LifeBuoy },
     ],
   },
 ];
