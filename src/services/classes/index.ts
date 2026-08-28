@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getAuthContext } from '@/lib/auth/context';
 import { getEntitlements } from '@/lib/entitlements/service';
 import { getRemainingCapacity } from '@/lib/entitlements/engine';
-import { assertCan, ForbiddenError } from '@/lib/permissions';
+import { assertCan, can, ForbiddenError } from '@/lib/permissions';
 import { createClassSchema } from '@/schemas/class';
 import type { Database } from '@/types/database.types';
 
@@ -145,5 +145,201 @@ export async function createClassAction(
   });
 
   revalidatePath('/dashboard/classes');
+  return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// Class detail + enrolment
+// ---------------------------------------------------------------------------
+
+export interface EnrolledLearner {
+  member_id: string;
+  learner_id: string;
+  name: string;
+  status: 'active' | 'inactive' | 'archived';
+  enrolled_at: string;
+}
+
+export interface ClassDetail {
+  klass: Pick<
+    ClassRow,
+    'id' | 'name' | 'description' | 'mode' | 'status' | 'capacity' | 'start_date' | 'end_date'
+  >;
+  enrolled: EnrolledLearner[];
+  enrollable: { id: string; name: string }[];
+  canManage: boolean;
+  atCapacity: boolean;
+}
+
+export async function getClassDetail(id: string): Promise<ClassDetail | null> {
+  const ctx = await getAuthContext();
+  if (!ctx?.organizationId) return null;
+  assertCan(ctx, 'classes.view');
+  const supabase = await createClient();
+
+  const { data: klass } = await supabase
+    .from('classes')
+    .select('id, name, description, mode, status, capacity, start_date, end_date')
+    .eq('id', id)
+    .eq('organization_id', ctx.organizationId)
+    .maybeSingle();
+  if (!klass) return null;
+
+  const { data: members } = await supabase
+    .from('class_members')
+    .select('id, learner_id, enrolled_at')
+    .eq('organization_id', ctx.organizationId)
+    .eq('class_id', id);
+
+  const memberRows = members ?? [];
+  const enrolledIds = new Set(memberRows.map((m) => m.learner_id));
+
+  // Resolve learner names + statuses for the enrolled set.
+  const names = new Map<string, { name: string; status: 'active' | 'inactive' | 'archived' }>();
+  if (memberRows.length > 0) {
+    const { data: learners } = await supabase
+      .from('learners')
+      .select('id, first_name, last_name, status')
+      .in(
+        'id',
+        memberRows.map((m) => m.learner_id),
+      );
+    for (const l of learners ?? []) {
+      names.set(l.id, {
+        name: `${l.first_name} ${l.last_name ?? ''}`.trim(),
+        status: l.status,
+      });
+    }
+  }
+
+  const enrolled: EnrolledLearner[] = memberRows.map((m) => ({
+    member_id: m.id,
+    learner_id: m.learner_id,
+    name: names.get(m.learner_id)?.name ?? 'Learner',
+    status: names.get(m.learner_id)?.status ?? 'active',
+    enrolled_at: m.enrolled_at,
+  }));
+
+  // Learners in the org that are not archived and not already enrolled.
+  const { data: allLearners } = await supabase
+    .from('learners')
+    .select('id, first_name, last_name')
+    .eq('organization_id', ctx.organizationId)
+    .neq('status', 'archived')
+    .order('first_name');
+
+  const enrollable = (allLearners ?? [])
+    .filter((l) => !enrolledIds.has(l.id))
+    .map((l) => ({ id: l.id, name: `${l.first_name} ${l.last_name ?? ''}`.trim() }));
+
+  const atCapacity = klass.capacity != null && enrolled.length >= klass.capacity;
+
+  return { klass, enrolled, enrollable, canManage: can(ctx, 'classes.manage'), atCapacity };
+}
+
+export type EnrolState = { error?: string; success?: boolean };
+
+/** Enrol a learner into a class. Enforces classes.manage and class capacity. */
+export async function enrolLearnerAction(
+  _prev: EnrolState,
+  formData: FormData,
+): Promise<EnrolState> {
+  const ctx = await getAuthContext();
+  if (!ctx?.organizationId) return { error: 'No active organization' };
+
+  try {
+    assertCan(ctx, 'classes.manage');
+  } catch (e) {
+    if (e instanceof ForbiddenError) return { error: 'You cannot manage class enrolment.' };
+    throw e;
+  }
+
+  const classId = formData.get('classId') as string;
+  const learnerId = formData.get('learnerId') as string;
+  if (!classId || !learnerId) return { error: 'Select a learner to enrol.' };
+
+  const supabase = await createClient();
+
+  // Capacity check (server-authoritative).
+  const { data: klass } = await supabase
+    .from('classes')
+    .select('capacity')
+    .eq('id', classId)
+    .eq('organization_id', ctx.organizationId)
+    .maybeSingle();
+  if (!klass) return { error: 'Class not found.' };
+
+  if (klass.capacity != null) {
+    const { count } = await supabase
+      .from('class_members')
+      .select('id', { count: 'exact', head: true })
+      .eq('organization_id', ctx.organizationId)
+      .eq('class_id', classId);
+    if ((count ?? 0) >= klass.capacity) {
+      return { error: 'This class is at capacity. Increase the capacity to enrol more learners.' };
+    }
+  }
+
+  const { error } = await supabase.from('class_members').insert({
+    organization_id: ctx.organizationId,
+    class_id: classId,
+    learner_id: learnerId,
+  });
+  if (error) {
+    // Unique (class_id, learner_id) — already enrolled.
+    if (error.code === '23505') return { error: 'That learner is already enrolled.' };
+    return { error: 'Could not enrol the learner.' };
+  }
+
+  await supabase.from('audit_logs').insert({
+    organization_id: ctx.organizationId,
+    actor_id: ctx.userId,
+    action: 'class.learner_enrolled',
+    resource_type: 'class',
+    resource_id: classId,
+    metadata: { learner_id: learnerId },
+  });
+
+  revalidatePath(`/dashboard/classes/${classId}`);
+  return { success: true };
+}
+
+/** Remove a learner from a class. Enforces classes.manage. */
+export async function unenrolLearnerAction(
+  _prev: EnrolState,
+  formData: FormData,
+): Promise<EnrolState> {
+  const ctx = await getAuthContext();
+  if (!ctx?.organizationId) return { error: 'No active organization' };
+
+  try {
+    assertCan(ctx, 'classes.manage');
+  } catch (e) {
+    if (e instanceof ForbiddenError) return { error: 'You cannot manage class enrolment.' };
+    throw e;
+  }
+
+  const memberId = formData.get('memberId') as string;
+  const classId = formData.get('classId') as string;
+  if (!memberId) return { error: 'Nothing to remove.' };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('class_members')
+    .delete()
+    .eq('id', memberId)
+    .eq('organization_id', ctx.organizationId);
+  if (error) return { error: 'Could not remove the learner.' };
+
+  await supabase.from('audit_logs').insert({
+    organization_id: ctx.organizationId,
+    actor_id: ctx.userId,
+    action: 'class.learner_unenrolled',
+    resource_type: 'class',
+    resource_id: classId,
+    metadata: { member_id: memberId },
+  });
+
+  revalidatePath(`/dashboard/classes/${classId}`);
   return { success: true };
 }

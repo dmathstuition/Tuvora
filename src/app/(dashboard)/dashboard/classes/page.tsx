@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { GraduationCap } from 'lucide-react';
 import { getAuthContext } from '@/lib/auth/context';
 import { listClasses, getRemainingClassCapacity } from '@/services/classes';
@@ -71,7 +72,11 @@ export default async function ClassesPage() {
               <tbody>
                 {classes.map((c) => (
                   <tr key={c.id} className="border-b last:border-0 hover:bg-muted/40">
-                    <td className="px-4 py-3 font-medium">{c.name}</td>
+                    <td className="px-4 py-3 font-medium">
+                      <Link href={`/dashboard/classes/${c.id}`} className="hover:underline">
+                        {c.name}
+                      </Link>
+                    </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {c.mode === 'one_to_one' ? 'One-to-one' : 'Group'}
                     </td>
