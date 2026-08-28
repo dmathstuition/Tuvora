@@ -1,0 +1,288 @@
+/**
+ * Database types.
+ *
+ * NOTE: In a provisioned environment these are GENERATED from the live schema:
+ *   pnpm db:types   (supabase gen types typescript --local)
+ *
+ * Until the Supabase project is linked, this hand-authored subset mirrors the
+ * generated shape (`Database['public']['Tables'][T]['Row' | 'Insert' | 'Update']`)
+ * for the tables the application code references today. Regenerate to get the
+ * full set — do not treat this file as the source of truth for the schema; the
+ * migrations in supabase/migrations are.
+ */
+
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+
+type Timestamps = {
+  created_at: string;
+  updated_at: string;
+};
+
+export interface Database {
+  __InternalSupabase: {
+    PostgrestVersion: '12';
+  };
+  public: {
+    Tables: {
+      profiles: {
+        Row: {
+          id: string;
+          email: string;
+          full_name: string | null;
+          avatar_url: string | null;
+          platform_role: 'none' | 'platform_support' | 'super_admin';
+          last_active_organization_id: string | null;
+        } & Timestamps;
+        Insert: {
+          id: string;
+          email: string;
+          full_name?: string | null;
+          avatar_url?: string | null;
+          platform_role?: 'none' | 'platform_support' | 'super_admin';
+          last_active_organization_id?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['profiles']['Insert']>;
+        Relationships: [];
+      };
+      organizations: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          type: string;
+          owner_id: string;
+          country: string | null;
+          currency: string;
+          timezone: string;
+          subjects: string[];
+          logo_url: string | null;
+          favicon_url: string | null;
+          brand_color: string | null;
+          onboarding_completed_at: string | null;
+          archived_at: string | null;
+        } & Timestamps;
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          type?: string;
+          owner_id: string;
+          country?: string | null;
+          currency?: string;
+          timezone?: string;
+          subjects?: string[];
+        };
+        Update: Partial<Database['public']['Tables']['organizations']['Insert']> & {
+          logo_url?: string | null;
+          favicon_url?: string | null;
+          brand_color?: string | null;
+          onboarding_completed_at?: string | null;
+          archived_at?: string | null;
+        };
+        Relationships: [];
+      };
+      organization_members: {
+        Row: {
+          id: string;
+          organization_id: string;
+          user_id: string;
+          role: 'owner' | 'admin' | 'tutor' | 'assistant' | 'accountant' | 'staff';
+          status: 'active' | 'invited' | 'suspended' | 'removed';
+          permission_overrides: Json;
+          invited_by: string | null;
+          joined_at: string | null;
+        } & Timestamps;
+        Insert: {
+          id?: string;
+          organization_id: string;
+          user_id: string;
+          role?: 'owner' | 'admin' | 'tutor' | 'assistant' | 'accountant' | 'staff';
+          status?: 'active' | 'invited' | 'suspended' | 'removed';
+          permission_overrides?: Json;
+          invited_by?: string | null;
+          joined_at?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['organization_members']['Insert']>;
+        Relationships: [];
+      };
+      subscription_plans: {
+        Row: {
+          id: string;
+          slug: string;
+          name: string;
+          description: string | null;
+          monthly_price_minor: number;
+          yearly_price_minor: number;
+          currency: string;
+          included_learners: number;
+          additional_learner_price_minor: number;
+          staff_limit: number | null;
+          class_limit: number | null;
+          course_limit: number | null;
+          storage_limit_mb: number | null;
+          is_active: boolean;
+          is_public: boolean;
+          is_recommended: boolean;
+          sort_order: number;
+          trial_days: number;
+        } & Timestamps;
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      features: {
+        Row: {
+          id: string;
+          slug: string;
+          name: string;
+          description: string | null;
+          type: 'boolean' | 'numeric' | 'unlimited';
+          default_value: Json;
+        } & Timestamps;
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      plan_features: {
+        Row: {
+          id: string;
+          plan_id: string;
+          feature_id: string;
+          value: Json;
+          created_at: string;
+        };
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      subscriptions: {
+        Row: {
+          id: string;
+          organization_id: string;
+          plan_id: string;
+          status:
+            | 'trialing'
+            | 'active'
+            | 'past_due'
+            | 'paused'
+            | 'cancelled'
+            | 'expired'
+            | 'incomplete';
+          interval: 'monthly' | 'yearly';
+          provider: string | null;
+          provider_customer_id: string | null;
+          provider_subscription_id: string | null;
+          trial_ends_at: string | null;
+          current_period_start: string | null;
+          current_period_end: string | null;
+          grace_period_ends_at: string | null;
+          cancel_at_period_end: boolean;
+          cancelled_at: string | null;
+        } & Timestamps;
+        Insert: {
+          organization_id: string;
+          plan_id: string;
+          status?: string;
+          interval?: 'monthly' | 'yearly';
+        } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      learners: {
+        Row: {
+          id: string;
+          organization_id: string;
+          user_id: string | null;
+          first_name: string;
+          last_name: string | null;
+          email: string | null;
+          phone: string | null;
+          date_of_birth: string | null;
+          avatar_url: string | null;
+          country: string | null;
+          timezone: string | null;
+          emergency_contact: Json | null;
+          notes: string | null;
+          status: 'active' | 'inactive' | 'archived';
+          enrolled_at: string;
+          archived_at: string | null;
+        } & Timestamps;
+        Insert: {
+          organization_id: string;
+          first_name: string;
+          last_name?: string | null;
+          email?: string | null;
+          phone?: string | null;
+          status?: 'active' | 'inactive' | 'archived';
+        } & Record<string, unknown>;
+        Update: Partial<Database['public']['Tables']['learners']['Insert']> & {
+          status?: 'active' | 'inactive' | 'archived';
+          archived_at?: string | null;
+        };
+        Relationships: [];
+      };
+      classes: {
+        Row: {
+          id: string;
+          organization_id: string;
+          name: string;
+          status: 'draft' | 'active' | 'completed' | 'archived';
+          mode: 'one_to_one' | 'group';
+          tutor_id: string | null;
+        } & Timestamps;
+        Insert: { organization_id: string; name: string } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      attendance: {
+        Row: {
+          id: string;
+          organization_id: string;
+          class_id: string;
+          learner_id: string;
+          session_date: string;
+          status: 'present' | 'absent' | 'late' | 'excused';
+          created_at: string;
+        };
+        Insert: {
+          organization_id: string;
+          class_id: string;
+          learner_id: string;
+          session_date: string;
+        } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      audit_logs: {
+        Row: {
+          id: string;
+          organization_id: string | null;
+          actor_id: string | null;
+          action: string;
+          resource_type: string | null;
+          resource_id: string | null;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: {
+          organization_id?: string | null;
+          actor_id?: string | null;
+          action: string;
+          resource_type?: string | null;
+          resource_id?: string | null;
+          metadata?: Json;
+        };
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+    };
+    Views: Record<string, never>;
+    Functions: {
+      get_active_learner_count: { Args: { org: string }; Returns: number };
+      get_learner_limit: { Args: { org: string }; Returns: number | null };
+      can_add_learner: { Args: { org: string }; Returns: boolean };
+    };
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
+  };
+}
