@@ -253,6 +253,29 @@ export interface Database {
         };
         Relationships: [];
       };
+      learner_portal_invites: {
+        Row: {
+          id: string;
+          organization_id: string;
+          learner_id: string;
+          email: string;
+          token: string;
+          invited_by: string | null;
+          accepted_at: string | null;
+          expires_at: string;
+          created_at: string;
+        };
+        Insert: {
+          organization_id: string;
+          learner_id: string;
+          email: string;
+          token: string;
+          invited_by?: string | null;
+          expires_at?: string;
+        };
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
       reward_events: {
         Row: {
           id: string;

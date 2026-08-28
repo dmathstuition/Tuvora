@@ -1,11 +1,12 @@
 import { redirect } from 'next/navigation';
 import { getUser, getUserOrganizations } from '@/lib/auth/context';
+import { isLinkedLearner } from '@/lib/auth/routing';
 import { Logo } from '@/components/brand/logo';
 import { OnboardingForm } from './onboarding-form';
 
 /**
- * Organization onboarding. If the user already belongs to an organization we
- * skip straight to the dashboard — onboarding is only for first-time setup.
+ * Organization onboarding. Existing org members skip to the dashboard, and
+ * learners are sent to their portal — onboarding is only for a first-time tutor.
  */
 export default async function OnboardingPage() {
   const user = await getUser();
@@ -13,6 +14,7 @@ export default async function OnboardingPage() {
 
   const orgs = await getUserOrganizations();
   if (orgs.length > 0) redirect('/dashboard');
+  if (await isLinkedLearner()) redirect('/portal');
 
   return (
     <div className="min-h-screen bg-muted/30">

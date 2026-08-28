@@ -4,10 +4,12 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, TrendingUp, FileBarChart, Sparkles } from 'lucide-react';
 import { getLearnerProfile } from '@/services/progress';
 import { getLearnerRewards } from '@/services/rewards';
+import { getPortalAccessStatus } from '@/services/portal/invites';
 import { levelFromPoints } from '@/constants/gamification';
 import { can } from '@/lib/permissions';
 import { getAuthContext } from '@/lib/auth/context';
 import { AwardPoints } from './award-points';
+import { PortalAccess } from './portal-access';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,10 +30,11 @@ export default async function LearnerProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [profile, rewards, ctx] = await Promise.all([
+  const [profile, rewards, ctx, portalAccess] = await Promise.all([
     getLearnerProfile(id),
     getLearnerRewards(id),
     getAuthContext(),
+    getPortalAccessStatus(id),
   ]);
   if (!profile) notFound();
 
@@ -41,6 +44,7 @@ export default async function LearnerProfilePage({
     attendance.present + attendance.late + attendance.absent + attendance.excused;
   const level = levelFromPoints(rewards.total);
   const canReward = !!ctx && can(ctx, 'rewards.manage');
+  const canManageLearner = !!ctx && can(ctx, 'learners.update');
 
   return (
     <div className="space-y-6">
@@ -135,6 +139,23 @@ export default async function LearnerProfilePage({
           )}
         </CardContent>
       </Card>
+
+      {/* Portal access */}
+      {canManageLearner && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Portal access</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PortalAccess
+              learnerId={learner.id}
+              linked={portalAccess.linked}
+              hasEmail={!!portalAccess.email}
+              initialUrl={portalAccess.invite?.url ?? null}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Score trend */}

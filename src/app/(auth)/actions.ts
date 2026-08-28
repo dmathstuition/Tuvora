@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { publicEnv } from '@/lib/public-env';
+import { resolveHomePath } from '@/lib/auth/routing';
 import { loginSchema, signUpSchema, forgotPasswordSchema } from '@/schemas/auth';
 
 export type AuthActionState = { error?: string; message?: string };
@@ -26,16 +27,26 @@ export async function signUpAction(
     return { error: parsed.error.issues[0]?.message ?? 'Invalid details' };
   }
 
+  // A learner may be signing up via a portal invite link.
+  const inviteToken = (formData.get('invite') as string) || '';
+
   const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
       data: { full_name: parsed.data.fullName },
-      emailRedirectTo: `${publicEnv.appUrl}/onboarding`,
+      emailRedirectTo: `${publicEnv.appUrl}/${inviteToken ? 'portal' : 'onboarding'}`,
     },
   });
   if (error) return { error: error.message };
+
+  // Link the learner record to this new user, then send them to their portal.
+  if (inviteToken && data.user) {
+    const { consumePortalInvite } = await import('@/services/portal/invites');
+    await consumePortalInvite(inviteToken, data.user.id);
+    redirect('/portal');
+  }
 
   redirect('/onboarding');
 }
@@ -56,9 +67,12 @@ export async function loginAction(
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) return { error: 'Invalid email or password' };
 
-  const redirectTo = (formData.get('redirect') as string) || '/dashboard';
+  // Honour an explicit redirect (e.g. a protected page the user was sent from);
+  // otherwise route by role — learners to their portal, tutors to the dashboard.
+  const explicit = (formData.get('redirect') as string) || '';
+  const target = explicit && explicit !== '/dashboard' ? explicit : await resolveHomePath();
   revalidatePath('/', 'layout');
-  redirect(redirectTo);
+  redirect(target);
 }
 
 export async function forgotPasswordAction(

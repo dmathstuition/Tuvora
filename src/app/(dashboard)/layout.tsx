@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getAuthContext, getProfile } from '@/lib/auth/context';
+import { isLinkedLearner } from '@/lib/auth/routing';
 import { listPermissions } from '@/lib/permissions';
 import { Sidebar } from '@/components/dashboard/sidebar';
 import { Topbar } from '@/components/dashboard/topbar';
@@ -13,7 +14,10 @@ import { Topbar } from '@/components/dashboard/topbar';
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const ctx = await getAuthContext();
   if (!ctx) redirect('/login');
-  if (!ctx.organizationId || !ctx.role) redirect('/onboarding');
+  if (!ctx.organizationId || !ctx.role) {
+    // Not an org member: a learner belongs in their portal; a fresh tutor in onboarding.
+    redirect((await isLinkedLearner()) ? '/portal' : '/onboarding');
+  }
 
   const supabase = await createClient();
   const [{ data: org }, profile] = await Promise.all([
