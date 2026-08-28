@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getAuthContext } from '@/lib/auth/context';
 import { assertCan, ForbiddenError } from '@/lib/permissions';
 import { getEntitlements } from '@/lib/entitlements/service';
-import { getActiveLearnerCount, getLearnerLimit } from '@/lib/entitlements/service';
+import { getLearnerBillingSummary } from '@/services/learner-billing';
 import { getPublicPlans, type PublicPlan } from './plans';
 import { hasFeature, getFeatureLimit } from '@/lib/entitlements/engine';
 import { FEATURE_SLUGS } from '@/constants/features';
@@ -20,7 +20,8 @@ export interface SubscriptionOverview {
   trialEndsAt: string | null;
   currentPeriodEnd: string | null;
   provider: string | null;
-  seats: { active: number; limit: number | null };
+  /** Per-learner billing: open learners, whether the free trial is used, and price. */
+  learners: { open: number; trialUsed: boolean; perLearnerMinor: number; currency: string };
   features: { slug: string; name: string; available: boolean; limit: number | null }[];
   plans: PublicPlan[];
 }
@@ -86,10 +87,9 @@ export async function getSubscriptionOverview(): Promise<SubscriptionOverview | 
     .maybeSingle();
   const orgCurrency = orgRow?.currency ?? 'USD';
 
-  const [entitlements, active, limit, plans] = await Promise.all([
+  const [entitlements, billing, plans] = await Promise.all([
     getEntitlements(ctx.organizationId),
-    getActiveLearnerCount(ctx.organizationId),
-    getLearnerLimit(ctx.organizationId),
+    getLearnerBillingSummary(ctx.organizationId),
     getPublicPlans(orgCurrency),
   ]);
 
@@ -109,7 +109,12 @@ export async function getSubscriptionOverview(): Promise<SubscriptionOverview | 
     trialEndsAt: sub?.trial_ends_at ?? null,
     currentPeriodEnd: sub?.current_period_end ?? null,
     provider: sub?.provider ?? null,
-    seats: { active, limit },
+    learners: {
+      open: billing.open,
+      trialUsed: billing.trialUsed,
+      perLearnerMinor: billing.price.amountMinor,
+      currency: billing.price.currency,
+    },
     features,
     plans,
   };

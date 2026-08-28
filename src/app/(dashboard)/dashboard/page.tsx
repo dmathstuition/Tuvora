@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import { Users, GraduationCap, CalendarCheck, Wallet, TrendingUp } from 'lucide-react';
 import { getAuthContext } from '@/lib/auth/context';
 import { createClient } from '@/lib/supabase/server';
-import { getActiveLearnerCount, getLearnerLimit } from '@/lib/entitlements/service';
+import { getLearnerBillingSummary } from '@/services/learner-billing';
 import { getOrgPerformanceTrend } from '@/services/progress';
+import { formatMoney } from '@/lib/utils';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { PerformanceChart } from '@/components/dashboard/performance-chart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,25 +21,24 @@ export default async function DashboardPage() {
   const organizationId = ctx!.organizationId!;
   const supabase = await createClient();
 
-  const [activeLearners, learnerLimit, classesRes, todayAttendanceRes, trend] =
-    await Promise.all([
-      getActiveLearnerCount(organizationId),
-      getLearnerLimit(organizationId),
-      supabase
-        .from('classes')
-        .select('id', { count: 'exact', head: true })
-        .eq('organization_id', organizationId)
-        .eq('status', 'active'),
-      supabase
-        .from('attendance')
-        .select('id', { count: 'exact', head: true })
-        .eq('organization_id', organizationId)
-        .eq('session_date', new Date().toISOString().slice(0, 10)),
-      getOrgPerformanceTrend(),
-    ]);
+  const [billing, classesRes, todayAttendanceRes, trend] = await Promise.all([
+    getLearnerBillingSummary(organizationId),
+    supabase
+      .from('classes')
+      .select('id', { count: 'exact', head: true })
+      .eq('organization_id', organizationId)
+      .eq('status', 'active'),
+    supabase
+      .from('attendance')
+      .select('id', { count: 'exact', head: true })
+      .eq('organization_id', organizationId)
+      .eq('session_date', new Date().toISOString().slice(0, 10)),
+    getOrgPerformanceTrend(),
+  ]);
 
-  const seatUsage =
-    learnerLimit === null ? 'Unlimited' : `${activeLearners} / ${learnerLimit} seats`;
+  const openLearners = billing.open;
+  const priceLabel = formatMoney(billing.price.amountMinor, billing.price.currency);
+  const seatUsage = `${priceLabel}/learner per month`;
   const hasTrendData = trend.some((t) => t.value !== null);
 
   return (
@@ -51,12 +51,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Active learners"
-          value={activeLearners}
-          hint={seatUsage}
-          icon={Users}
-        />
+        <StatCard label="Open learners" value={openLearners} hint={seatUsage} icon={Users} />
         <StatCard label="Active classes" value={classesRes.count ?? 0} icon={GraduationCap} />
         <StatCard
           label="Attendance today"
@@ -91,8 +86,12 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Learner seats</span>
-              <span className="font-medium">{seatUsage}</span>
+              <span className="text-muted-foreground">Open learners</span>
+              <span className="font-medium">{openLearners}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Per learner</span>
+              <span className="font-medium">{priceLabel}/mo</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Active classes</span>

@@ -365,6 +365,60 @@ export interface Database {
         Update: Record<string, unknown>;
         Relationships: [];
       };
+      payments: {
+        Row: {
+          id: string;
+          organization_id: string;
+          direction: 'platform' | 'tutor';
+          status: 'pending' | 'succeeded' | 'failed' | 'refunded';
+          amount_minor: number;
+          currency: string;
+          provider: string | null;
+          provider_payment_id: string | null;
+          payer_learner_id: string | null;
+          payer_parent_id: string | null;
+          invoice_id: string | null;
+          metadata: Json;
+          paid_at: string | null;
+        } & Timestamps;
+        Insert: {
+          organization_id: string;
+          direction: 'platform' | 'tutor';
+          status?: 'pending' | 'succeeded' | 'failed' | 'refunded';
+          amount_minor: number;
+          currency?: string;
+          payer_learner_id?: string | null;
+          payer_parent_id?: string | null;
+          metadata?: Json;
+          paid_at?: string | null;
+        } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      learner_billing: {
+        Row: {
+          id: string;
+          organization_id: string;
+          learner_id: string;
+          status: 'trialing' | 'active' | 'past_due' | 'expired';
+          is_trial: boolean;
+          current_period_start: string | null;
+          current_period_end: string | null;
+          provider: string | null;
+          provider_reference: string | null;
+          last_payment_id: string | null;
+        } & Timestamps;
+        Insert: {
+          organization_id: string;
+          learner_id: string;
+          status?: 'trialing' | 'active' | 'past_due' | 'expired';
+          is_trial?: boolean;
+          current_period_start?: string | null;
+          current_period_end?: string | null;
+        } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
       audit_logs: {
         Row: {
           id: string;
@@ -393,6 +447,9 @@ export interface Database {
       get_active_learner_count: { Args: { org: string }; Returns: number };
       get_learner_limit: { Args: { org: string }; Returns: number | null };
       can_add_learner: { Args: { org: string }; Returns: boolean };
+      org_free_trial_used: { Args: { org: string }; Returns: boolean };
+      learner_account_open: { Args: { learner: string }; Returns: boolean };
+      get_open_learner_count: { Args: { org: string }; Returns: number };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

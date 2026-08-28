@@ -6,6 +6,7 @@ import { getSubscriptionOverview } from '@/services/billing/subscription';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
+import { formatMoney } from '@/lib/utils';
 import { PlanSwitcher } from './plan-switcher';
 
 export const metadata: Metadata = { title: 'Subscription' };
@@ -40,14 +41,7 @@ export default async function SubscriptionPage() {
   if (!overview) return null;
 
   const canManage = can(ctx, 'billing.manage');
-  const seatLabel =
-    overview.seats.limit === null
-      ? `${overview.seats.active} learners · unlimited`
-      : `${overview.seats.active} / ${overview.seats.limit} learner seats`;
-  const seatPct =
-    overview.seats.limit && overview.seats.limit > 0
-      ? Math.min(100, Math.round((overview.seats.active / overview.seats.limit) * 100))
-      : 0;
+  const perLearner = formatMoney(overview.learners.perLearnerMinor, overview.learners.currency);
 
   return (
     <div className="space-y-6">
@@ -103,16 +97,21 @@ export default async function SubscriptionPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Learner seats</CardTitle>
+            <CardTitle className="text-base">Learner billing</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-2xl font-bold">{overview.seats.active}</p>
-            <p className="text-xs text-muted-foreground">{seatLabel}</p>
-            {overview.seats.limit !== null && (
-              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                <div className="h-full bg-primary" style={{ width: `${seatPct}%` }} />
-              </div>
-            )}
+            <p className="text-2xl font-bold">{overview.learners.open}</p>
+            <p className="text-xs text-muted-foreground">open learners</p>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Per learner</span>
+              <span className="font-medium">{perLearner}/mo</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Free trial</span>
+              <span className="font-medium">
+                {overview.learners.trialUsed ? 'Used' : '1 available'}
+              </span>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -8,11 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 /**
- * Add-learner control. Opens a lightweight inline dialog. The button is disabled
- * at the seat limit as a UX affordance only — the server action and DB trigger
- * are the real enforcement.
+ * Add-learner control. Opens a lightweight inline dialog. Under the per-learner
+ * model the first learner is free for a month; others are created "payment
+ * required" until activated. The server action is the real enforcement.
  */
-export function AddLearnerButton({ atLimit }: { atLimit: boolean }) {
+export function AddLearnerButton() {
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState<CreateLearnerState, FormData>(
     createLearnerAction,
@@ -20,12 +20,14 @@ export function AddLearnerButton({ atLimit }: { atLimit: boolean }) {
   );
 
   useEffect(() => {
-    if (state.success) setOpen(false);
-  }, [state.success]);
+    // Close only when a trial learner opened immediately; keep open on
+    // payment-required so the tutor sees the note.
+    if (state.success && !state.needsPayment) setOpen(false);
+  }, [state.success, state.needsPayment]);
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} disabled={atLimit}>
+      <Button onClick={() => setOpen(true)}>
         <Plus className="h-4 w-4" /> Add learner
       </Button>
 
@@ -70,10 +72,16 @@ export function AddLearnerButton({ atLimit }: { atLimit: boolean }) {
                   {state.error}
                 </p>
               )}
+              {state.success && state.needsPayment && (
+                <p className="rounded-md bg-warning/15 px-3 py-2 text-sm">
+                  Learner added. Their account opens once you activate this month&apos;s payment
+                  from the learners list. You can add another now.
+                </p>
+              )}
 
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                  Cancel
+                  Close
                 </Button>
                 <Button type="submit" disabled={pending}>
                   {pending ? 'Adding…' : 'Add learner'}
