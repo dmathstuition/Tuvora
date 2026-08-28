@@ -1,0 +1,10 @@
+# Minimal Supabase CLI config. Set project_id when linking:
+#   supabase link --project-ref <your-project-ref>
+project_id = "tuvora"
+
+[db]
+major_version = 15
+
+[auth]
+enable_signup = true
+# Add site_url / redirect URLs for your deployment when linking.
