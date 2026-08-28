@@ -123,12 +123,18 @@ declare
     'progress_records','progress_reports',
     'files','resources','message_threads','messages',
     'notifications','calendar_events',
-    'subscriptions','subscription_items','subscription_usage',
-    'payments','invoices','invoice_items'
+    'subscriptions','subscription_usage',
+    'payments','invoices'
+    -- NOTE: subscription_items and invoice_items are intentionally NOT in this
+    -- list. They have no organization_id column (they reach the tenant through
+    -- their parent subscription/invoice), so they get bespoke policies below.
   ];
 begin
   foreach t in array tenant_tables loop
     execute format('alter table public.%I enable row level security;', t);
+
+    -- Idempotent: drop any prior policy so this migration is safely re-runnable.
+    execute format('drop policy if exists %1$I_member_all on public.%1$I;', t);
 
     -- Members of the owning organization have full access; super admins bypass.
     execute format($f$
@@ -246,6 +252,42 @@ create policy plan_features_public_read on public.plan_features
   for select using (true);
 create policy plan_features_admin_write on public.plan_features
   for all using (public.is_super_admin()) with check (public.is_super_admin());
+
+-- ----------------------------------------------------------------------------
+-- Child billing tables without an organization_id column. They resolve the
+-- tenant through their parent (subscriptions / invoices), so membership is
+-- checked against the parent's organization_id via a SECURITY DEFINER helper
+-- to keep the policy non-recursive.
+-- ----------------------------------------------------------------------------
+create or replace function public.can_access_subscription(sub uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.subscriptions s
+    where s.id = sub and public.is_org_member(s.organization_id)
+  );
+$$;
+
+create or replace function public.can_access_invoice(inv uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.invoices i
+    where i.id = inv and public.is_org_member(i.organization_id)
+  );
+$$;
+
+alter table public.subscription_items enable row level security;
+drop policy if exists subscription_items_member_all on public.subscription_items;
+create policy subscription_items_member_all on public.subscription_items
+  for all
+  using (public.is_super_admin() or public.can_access_subscription(subscription_id))
+  with check (public.is_super_admin() or public.can_access_subscription(subscription_id));
+
+alter table public.invoice_items enable row level security;
+drop policy if exists invoice_items_member_all on public.invoice_items;
+create policy invoice_items_member_all on public.invoice_items
+  for all
+  using (public.is_super_admin() or public.can_access_invoice(invoice_id))
+  with check (public.is_super_admin() or public.can_access_invoice(invoice_id));
 
 -- ----------------------------------------------------------------------------
 -- billing_events + audit_logs — never client-writable.
