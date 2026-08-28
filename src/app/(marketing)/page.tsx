@@ -80,7 +80,7 @@ export default function HomePage() {
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <Link href="/pricing">See pricing</Link>
+              <Link href="/demo">See how it works</Link>
             </Button>
           </div>
           <p className="mt-4 text-xs text-muted-foreground">

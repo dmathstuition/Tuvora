@@ -8,8 +8,8 @@ export const siteConfig = {
   nav: [
     { title: 'Features', href: '/features' },
     { title: 'Pricing', href: '/pricing' },
+    { title: 'Demo', href: '/demo' },
     { title: 'For Tutors', href: '/for-tutors' },
-    { title: 'For Businesses', href: '/for-tutoring-businesses' },
     { title: 'About', href: '/about' },
   ],
 } as const;
