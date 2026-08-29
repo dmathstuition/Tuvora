@@ -7,6 +7,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { formatDistanceToNow } from 'date-fns';
+import { ConfirmButton } from '@/components/ui/confirm-button';
+import { deleteTicketAction } from '@/services/admin/actions';
 import { TicketStatus } from './ticket-status';
 
 export const metadata: Metadata = { title: 'Admin · Support' };
@@ -25,9 +27,12 @@ const priorityVariant: Record<string, 'destructive' | 'warning' | 'secondary'> =
 };
 
 export default async function AdminSupportPage() {
-  const [tickets, ctx] = await Promise.all([listSupportTickets(), getAuthContext()]);
+  const [tickets, ctx, canDelete] = await Promise.all([
+    listSupportTickets(),
+    getAuthContext(),
+    viewerIsSuperAdmin(),
+  ]);
   const canManage = !!ctx && isPlatformStaff(ctx);
-  await viewerIsSuperAdmin();
 
   const open = tickets.filter((t) => t.status === 'open' || t.status === 'pending').length;
 
@@ -53,6 +58,7 @@ export default async function AdminSupportPage() {
                   <th className="px-4 py-3 font-medium">Priority</th>
                   <th className="px-4 py-3 font-medium">Opened</th>
                   <th className="px-4 py-3 font-medium">Status</th>
+                  {canDelete && <th className="px-4 py-3" />}
                 </tr>
               </thead>
               <tbody>
@@ -77,6 +83,18 @@ export default async function AdminSupportPage() {
                         </Badge>
                       )}
                     </td>
+                    {canDelete && (
+                      <td className="px-4 py-3 text-right">
+                        <form action={deleteTicketAction}>
+                          <input type="hidden" name="id" value={t.id} />
+                          <ConfirmButton
+                            variant="outline"
+                            label="Delete"
+                            message={`Delete ticket "${t.subject}"? This cannot be undone.`}
+                          />
+                        </form>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

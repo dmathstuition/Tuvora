@@ -5,6 +5,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { formatMoney } from '@/lib/utils';
+import { ConfirmButton } from '@/components/ui/confirm-button';
+import { deleteCouponAction } from '@/services/admin/actions';
 import { CouponForm } from './coupon-form';
 import { CouponToggle } from './coupon-toggle';
 
@@ -71,8 +73,18 @@ export default async function AdminCouponsPage() {
                       </Badge>
                     </td>
                     {canWrite && (
-                      <td className="px-4 py-3 text-right">
-                        <CouponToggle couponId={c.id} active={c.isActive} />
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-2">
+                          <CouponToggle couponId={c.id} active={c.isActive} />
+                          <form action={deleteCouponAction}>
+                            <input type="hidden" name="id" value={c.id} />
+                            <ConfirmButton
+                              variant="outline"
+                              label="Delete"
+                              message={`Delete coupon "${c.code}"? This cannot be undone.`}
+                            />
+                          </form>
+                        </div>
                       </td>
                     )}
                   </tr>

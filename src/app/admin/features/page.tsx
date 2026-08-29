@@ -4,6 +4,8 @@ import { listFeatures, viewerIsSuperAdmin } from '@/services/admin';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
+import { ConfirmButton } from '@/components/ui/confirm-button';
+import { deleteFeatureAction } from '@/services/admin/actions';
 import { FeatureForm } from './feature-form';
 
 export const metadata: Metadata = { title: 'Admin · Features' };
@@ -35,6 +37,7 @@ export default async function AdminFeaturesPage() {
                   <th className="px-4 py-3 font-medium">Slug</th>
                   <th className="px-4 py-3 font-medium">Type</th>
                   <th className="px-4 py-3 font-medium">In plans</th>
+                  {canWrite && <th className="px-4 py-3" />}
                 </tr>
               </thead>
               <tbody>
@@ -49,6 +52,22 @@ export default async function AdminFeaturesPage() {
                       <Badge variant="secondary">{f.type}</Badge>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{f.plans}</td>
+                    {canWrite && (
+                      <td className="px-4 py-3 text-right">
+                        {f.plans > 0 ? (
+                          <span className="text-xs text-muted-foreground">In use</span>
+                        ) : (
+                          <form action={deleteFeatureAction}>
+                            <input type="hidden" name="id" value={f.id} />
+                            <ConfirmButton
+                              variant="outline"
+                              label="Delete"
+                              message={`Delete feature "${f.name}"? This cannot be undone.`}
+                            />
+                          </form>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
