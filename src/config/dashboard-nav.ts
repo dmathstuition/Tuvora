@@ -14,6 +14,7 @@ import {
   MessagesSquare,
   Megaphone,
   Gift,
+  Award,
   Calendar,
   Wallet,
   Receipt,
@@ -66,6 +67,7 @@ export const DASHBOARD_NAV: NavSection[] = [
       { title: 'Reports', href: '/dashboard/reports', icon: BarChart3, permission: 'reports.view' },
       { title: 'Analytics', href: '/dashboard/analytics', icon: LineChart, permission: 'reports.view' },
       { title: 'Rewards shop', href: '/dashboard/shop', icon: Gift, permission: 'rewards.view' },
+      { title: 'Certificates', href: '/dashboard/certificates', icon: Award, permission: 'reports.view' },
     ],
   },
   {

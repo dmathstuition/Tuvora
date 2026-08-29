@@ -830,6 +830,32 @@ export interface Database {
         Update: { value?: Json; updated_at?: string };
         Relationships: [];
       };
+      certificates: {
+        Row: {
+          id: string;
+          organization_id: string;
+          learner_id: string;
+          title: string;
+          type: string;
+          description: string | null;
+          serial: string;
+          issued_by: string | null;
+          issued_at: string;
+          revoked_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          organization_id: string;
+          learner_id: string;
+          title: string;
+          serial: string;
+          type?: string;
+          description?: string | null;
+          issued_by?: string | null;
+        } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
       reward_shop_items: {
         Row: {
           id: string;

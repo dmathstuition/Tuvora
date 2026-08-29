@@ -90,7 +90,7 @@ export const LEARNER_FEATURES: LearnerFeature[] = [
   { key: 'leaderboard', label: 'Leaderboard', group: 'Progress', href: '/portal/progress', status: 'live', icon: Users, accent: 'from-pink-500 to-rose-600' },
   { key: 'attendance', label: 'Attendance', group: 'Progress', href: '/portal/progress', status: 'live', icon: CalendarDays, accent: 'from-sky-500 to-cyan-600' },
   { key: 'my_behaviour', label: 'My behaviour', group: 'Progress', href: '/portal/progress', status: 'live', icon: CircleCheck, accent: 'from-teal-500 to-emerald-600' },
-  { key: 'certificates', label: 'Certificates', group: 'Progress', href: '/portal/progress', status: 'soon', icon: GraduationCap, accent: 'from-indigo-500 to-blue-600' },
+  { key: 'certificates', label: 'Certificates', group: 'Progress', href: '/portal/certificates', status: 'live', icon: GraduationCap, accent: 'from-indigo-500 to-blue-600' },
 
   // Account
   { key: 'messages', label: 'Messages', group: 'Account', href: '/portal/messages', status: 'live', icon: MessageSquare, accent: 'from-blue-500 to-indigo-600' },
