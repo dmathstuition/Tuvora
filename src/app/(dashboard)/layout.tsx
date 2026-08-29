@@ -21,7 +21,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const supabase = await createClient();
   const [{ data: org }, profile] = await Promise.all([
-    supabase.from('organizations').select('name').eq('id', ctx.organizationId).single(),
+    supabase.from('organizations').select('name, logo_url').eq('id', ctx.organizationId).single(),
     getProfile(),
   ]);
 
@@ -53,7 +53,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="flex h-screen overflow-hidden print:block print:h-auto print:overflow-visible">
       <div className="print:hidden">
-        <Sidebar permissions={permissions} />
+        <Sidebar
+          permissions={permissions}
+          org={{
+            name: org?.name ?? 'Your organization',
+            planLabel,
+            logoUrl: org?.logo_url ?? null,
+            hasPlan: !!sub,
+          }}
+        />
       </div>
       <div className="flex flex-1 flex-col overflow-hidden print:overflow-visible">
         <div className="print:hidden">

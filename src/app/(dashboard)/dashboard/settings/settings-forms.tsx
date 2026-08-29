@@ -1,9 +1,11 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useRef, useState } from 'react';
 import {
   updateOrgProfileAction,
   updateBrandingAction,
+  uploadLogoAction,
+  removeLogoAction,
   type SettingsState,
   type OrgSettings,
 } from '@/services/organizations/settings';
@@ -40,6 +42,18 @@ export function OrgProfileForm({ settings, disabled }: { settings: OrgSettings; 
             <Label htmlFor="name">Business name</Label>
             <Input id="name" name="name" defaultValue={settings.name} required />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Academy email</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              defaultValue={settings.email ?? ''}
+              placeholder="hello@youracademy.com"
+            />
+          </div>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="timezone">Timezone</Label>
             <Input id="timezone" name="timezone" defaultValue={settings.timezone} />
@@ -91,6 +105,65 @@ export function OrgProfileForm({ settings, disabled }: { settings: OrgSettings; 
         </div>
       </fieldset>
     </form>
+  );
+}
+
+export function LogoUpload({ settings, disabled }: { settings: OrgSettings; disabled: boolean }) {
+  const [state, action, pending] = useActionState<SettingsState, FormData>(uploadLogoAction, {});
+  const [removeState, removeAction, removing] = useActionState<SettingsState, FormData>(
+    removeLogoAction,
+    {},
+  );
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<string | null>(settings.logoUrl);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-4">
+        <span className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full ring-2 ring-primary/30 bg-muted">
+          {preview ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={preview} alt="Academy logo" className="h-full w-full object-cover" />
+          ) : (
+            <span className="text-2xl font-bold text-muted-foreground">
+              {settings.name.slice(0, 1).toUpperCase()}
+            </span>
+          )}
+        </span>
+        <div className="text-sm text-muted-foreground">
+          <p className="font-medium text-foreground">Academy logo</p>
+          <p>PNG, JPG or SVG. Shown as your circular badge across the app. Max 2MB.</p>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <form action={action} className="flex flex-wrap items-center gap-3">
+          <input
+            ref={inputRef}
+            type="file"
+            name="logo"
+            accept="image/*"
+            disabled={disabled}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) setPreview(URL.createObjectURL(f));
+            }}
+            className="block text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary-foreground hover:file:bg-primary/90"
+          />
+          <Button type="submit" disabled={disabled || pending}>
+            {pending ? 'Uploading…' : 'Upload logo'}
+          </Button>
+        </form>
+        {settings.logoUrl && (
+          <form action={removeAction}>
+            <Button type="submit" variant="outline" disabled={disabled || removing}>
+              {removing ? 'Removing…' : 'Remove'}
+            </Button>
+          </form>
+        )}
+      </div>
+      <Saved state={state.error || state.success ? state : removeState} />
+    </div>
   );
 }
 

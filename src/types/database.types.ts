@@ -55,6 +55,7 @@ export interface Database {
           currency: string;
           timezone: string;
           subjects: string[];
+          email: string | null;
           logo_url: string | null;
           favicon_url: string | null;
           brand_color: string | null;
@@ -75,11 +76,13 @@ export interface Database {
           subjects?: string[];
           employs_tutors?: boolean;
           portal_preferences?: Json;
+          email?: string | null;
           brand_color?: string | null;
           logo_url?: string | null;
           favicon_url?: string | null;
         };
         Update: Partial<Database['public']['Tables']['organizations']['Insert']> & {
+          email?: string | null;
           logo_url?: string | null;
           favicon_url?: string | null;
           brand_color?: string | null;

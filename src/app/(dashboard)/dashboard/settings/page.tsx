@@ -6,7 +6,7 @@ import { getOrgSettings } from '@/services/organizations/settings';
 import { can } from '@/lib/permissions';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { OrgProfileForm, BrandingForm } from './settings-forms';
+import { OrgProfileForm, BrandingForm, LogoUpload } from './settings-forms';
 
 export const metadata: Metadata = { title: 'Settings' };
 
@@ -57,8 +57,11 @@ export default async function SettingsPage() {
             {!canBranding && ' You need admin access to edit these.'}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <BrandingForm settings={settings} disabled={!canBranding} />
+        <CardContent className="space-y-6">
+          <LogoUpload settings={settings} disabled={!canBranding} />
+          <div className="border-t pt-6">
+            <BrandingForm settings={settings} disabled={!canBranding} />
+          </div>
         </CardContent>
       </Card>
     </div>
