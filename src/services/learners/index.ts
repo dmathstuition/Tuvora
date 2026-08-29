@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getAuthContext } from '@/lib/auth/context';
 import { assertCan, can, ForbiddenError } from '@/lib/permissions';
+import { getTrialStatus } from '@/lib/entitlements/service';
 import { createLearnerSchema } from '@/schemas/learner';
 import type { Database } from '@/types/database.types';
 
@@ -126,11 +127,20 @@ export async function createLearnerAction(
 
   const supabase = await createClient();
 
-  // Is the single free-trial learner still available?
-  const { data: trialUsed } = await supabase.rpc('org_free_trial_used', {
-    org: ctx.organizationId,
-  });
-  const useTrial = !trialUsed;
+  // During the academy's 14-day free trial EVERY learner opens immediately and
+  // free — nothing is held back. Outside the trial the per-learner billing model
+  // applies: the single free-trial learner is still available, everyone else is
+  // created inactive until paid for the month.
+  const orgTrial = await getTrialStatus(ctx.organizationId);
+  const inFreeTrial = orgTrial.state === 'trialing';
+
+  let useTrial = inFreeTrial;
+  if (!inFreeTrial) {
+    const { data: trialUsed } = await supabase.rpc('org_free_trial_used', {
+      org: ctx.organizationId,
+    });
+    useTrial = !trialUsed;
+  }
 
   // Create the learner. Trial learners open immediately (active); others start
   // inactive until paid for the month.
@@ -151,13 +161,16 @@ export async function createLearnerAction(
 
   const now = new Date();
   if (useTrial) {
+    // Trial learners run until the academy trial ends (or a month for the
+    // legacy single-free-learner case outside the trial window).
+    const periodEnd = inFreeTrial && orgTrial.trialEndsAt ? new Date(orgTrial.trialEndsAt) : addMonth(now);
     await supabase.from('learner_billing').insert({
       organization_id: ctx.organizationId,
       learner_id: learner.id,
       status: 'trialing',
       is_trial: true,
       current_period_start: now.toISOString(),
-      current_period_end: addMonth(now).toISOString(),
+      current_period_end: periodEnd.toISOString(),
     });
   } else {
     await supabase.from('learner_billing').insert({
