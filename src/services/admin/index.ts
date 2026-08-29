@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getAuthContext } from '@/lib/auth/context';
 import { isPlatformStaff, isSuperAdmin } from '@/lib/permissions';
 import { startOfMonth, subMonths, format } from 'date-fns';
+import { pctChange, monthBounds, cumulativeByWeek, type SeriesPoint } from '@/lib/series';
 
 /**
  * Platform-admin data services. Every read runs through the signed-in user's
@@ -71,6 +72,96 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     activeSubscriptions: (subs.data ?? []).length,
     mrrMinor: top?.[1] ?? 0,
     mrrCurrency: top?.[0] ?? 'USD',
+  };
+}
+
+export interface AdminOverview {
+  orgTrendPct: number | null;
+  learnerTrendPct: number | null;
+  subStatus: {
+    active: number;
+    trialing: number;
+    pastDue: number;
+    cancelled: number;
+    expired: number;
+    total: number;
+  };
+  orgGrowth: SeriesPoint[];
+  learnerGrowth: SeriesPoint[];
+  activity: { action: string; createdAt: string }[];
+  tasks: {
+    openTickets: number;
+    pastDueSubs: number;
+    pendingPayments: number;
+    trialing: number;
+    organizations: number;
+  };
+}
+
+/** Extra platform-overview aggregates for the super-admin dashboard. */
+export async function getAdminOverview(): Promise<AdminOverview> {
+  const supabase = await createClient();
+  const thisM = monthBounds(0);
+  const lastM = monthBounds(-1);
+
+  const rangeCount = async (table: 'organizations' | 'learners', start: string, end: string) => {
+    const { count } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from(table as any)
+      .select('id', { count: 'exact', head: true })
+      .gte('created_at', start)
+      .lt('created_at', end);
+    return count ?? 0;
+  };
+
+  const [
+    orgThis,
+    orgLast,
+    learnThis,
+    learnLast,
+    { data: orgDates },
+    { data: learnerDates },
+    { data: subs },
+    { data: activity },
+    { count: openTickets },
+    { count: pendingPayments },
+  ] = await Promise.all([
+    rangeCount('organizations', thisM.start, thisM.end),
+    rangeCount('organizations', lastM.start, lastM.end),
+    rangeCount('learners', thisM.start, thisM.end),
+    rangeCount('learners', lastM.start, lastM.end),
+    supabase.from('organizations').select('created_at').order('created_at', { ascending: true }),
+    supabase.from('learners').select('created_at').order('created_at', { ascending: true }),
+    supabase.from('subscriptions').select('status'),
+    supabase.from('audit_logs').select('action, created_at').order('created_at', { ascending: false }).limit(6),
+    supabase.from('support_tickets').select('id', { count: 'exact', head: true }).in('status', ['open', 'pending']),
+    supabase.from('payments').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+  ]);
+
+  const g = (k: string) => (subs ?? []).filter((s) => s.status === k).length;
+  const subStatus = {
+    active: g('active'),
+    trialing: g('trialing'),
+    pastDue: g('past_due'),
+    cancelled: g('cancelled'),
+    expired: g('expired'),
+    total: (subs ?? []).length,
+  };
+
+  return {
+    orgTrendPct: pctChange(orgThis, orgLast),
+    learnerTrendPct: pctChange(learnThis, learnLast),
+    subStatus,
+    orgGrowth: cumulativeByWeek((orgDates ?? []).map((o) => o.created_at), 5),
+    learnerGrowth: cumulativeByWeek((learnerDates ?? []).map((l) => l.created_at), 5),
+    activity: (activity ?? []).map((a) => ({ action: a.action, createdAt: a.created_at })),
+    tasks: {
+      openTickets: openTickets ?? 0,
+      pastDueSubs: subStatus.pastDue,
+      pendingPayments: pendingPayments ?? 0,
+      trialing: subStatus.trialing,
+      organizations: (orgDates ?? []).length,
+    },
   };
 }
 

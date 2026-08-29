@@ -60,6 +60,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <Topbar
             orgName={org?.name ?? 'Your organization'}
             userName={profile?.full_name ?? profile?.email ?? null}
+            roleLabel={ctx.role ?? undefined}
             planLabel={planLabel}
             permissions={permissions}
           />
