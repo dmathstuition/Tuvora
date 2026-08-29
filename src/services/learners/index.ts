@@ -1,9 +1,10 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getAuthContext } from '@/lib/auth/context';
-import { assertCan, ForbiddenError } from '@/lib/permissions';
+import { assertCan, can, ForbiddenError } from '@/lib/permissions';
 import { createLearnerSchema } from '@/schemas/learner';
 import type { Database } from '@/types/database.types';
 
@@ -181,4 +182,129 @@ export async function createLearnerAction(
 
   revalidatePath('/dashboard/learners');
   return { success: true, needsPayment: !useTrial };
+}
+
+// ---------------------------------------------------------------------------
+// Edit · archive · delete
+// ---------------------------------------------------------------------------
+
+export type UpdateLearnerState = { error?: string; success?: boolean };
+
+/** Edit a learner's basic details. */
+export async function updateLearnerAction(
+  _prev: UpdateLearnerState,
+  formData: FormData,
+): Promise<UpdateLearnerState> {
+  const ctx = await getAuthContext();
+  if (!ctx?.organizationId) return { error: 'No active organization' };
+  try {
+    assertCan(ctx, 'learners.update');
+  } catch (e) {
+    if (e instanceof ForbiddenError) return { error: 'You cannot edit learners.' };
+    throw e;
+  }
+  const id = String(formData.get('id') ?? '');
+  const firstName = String(formData.get('firstName') ?? '').trim();
+  if (!id) return { error: 'Missing learner.' };
+  if (firstName.length < 1) return { error: 'First name is required.' };
+
+  const email = String(formData.get('email') ?? '').trim();
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: 'Enter a valid email.' };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('learners')
+    .update({
+      first_name: firstName,
+      last_name: String(formData.get('lastName') ?? '').trim() || null,
+      email: email || null,
+      phone: String(formData.get('phone') ?? '').trim() || null,
+    })
+    .eq('id', id)
+    .eq('organization_id', ctx.organizationId);
+  if (error) return { error: 'Could not save the learner.' };
+
+  revalidatePath('/dashboard/learners');
+  revalidatePath(`/dashboard/learners/${id}`);
+  return { success: true };
+}
+
+/** Archive (deactivate) a learner without deleting their data. */
+export async function archiveLearnerAction(formData: FormData): Promise<void> {
+  const ctx = await getAuthContext();
+  if (!ctx?.organizationId || !can(ctx, 'learners.archive')) return;
+  const id = String(formData.get('id') ?? '');
+  if (!id) return;
+  const supabase = await createClient();
+  await supabase
+    .from('learners')
+    .update({ status: 'archived', archived_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('organization_id', ctx.organizationId);
+  await supabase.from('audit_logs').insert({
+    organization_id: ctx.organizationId,
+    actor_id: ctx.userId,
+    action: 'learner.archived',
+    resource_type: 'learner',
+    resource_id: id,
+  });
+  revalidatePath('/dashboard/learners');
+  revalidatePath(`/dashboard/learners/${id}`);
+}
+
+/** Permanently delete a learner. Only permitted when they are NOT active. */
+export async function deleteLearnerAction(formData: FormData): Promise<void> {
+  const ctx = await getAuthContext();
+  if (!ctx?.organizationId || !can(ctx, 'learners.delete')) return;
+  const id = String(formData.get('id') ?? '');
+  if (!id) return;
+  const supabase = await createClient();
+
+  const { data: learner } = await supabase
+    .from('learners')
+    .select('status')
+    .eq('id', id)
+    .eq('organization_id', ctx.organizationId)
+    .maybeSingle();
+  if (!learner || learner.status === 'active') return; // never delete an active learner
+
+  await supabase.from('learners').delete().eq('id', id).eq('organization_id', ctx.organizationId);
+  await supabase.from('audit_logs').insert({
+    organization_id: ctx.organizationId,
+    actor_id: ctx.userId,
+    action: 'learner.deleted',
+    resource_type: 'learner',
+    resource_id: id,
+  });
+  revalidatePath('/dashboard/learners');
+  redirect('/dashboard/learners');
+}
+
+export interface LearnerBasics {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  status: string;
+}
+
+/** Raw editable fields for the edit dialog + delete-eligibility. */
+export async function getLearnerBasics(id: string): Promise<LearnerBasics | null> {
+  const ctx = await getAuthContext();
+  if (!ctx?.organizationId) return null;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('learners')
+    .select('first_name, last_name, email, phone, status')
+    .eq('id', id)
+    .eq('organization_id', ctx.organizationId)
+    .maybeSingle();
+  if (!data) return null;
+  return {
+    firstName: data.first_name,
+    lastName: data.last_name ?? '',
+    email: data.email ?? '',
+    phone: data.phone ?? '',
+    status: data.status,
+  };
 }

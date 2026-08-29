@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getAuthContext } from '@/lib/auth/context';
 import { getEntitlements } from '@/lib/entitlements/service';
@@ -353,4 +354,70 @@ export async function unenrolLearnerAction(
 
   revalidatePath(`/dashboard/classes/${classId}`);
   return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// Edit + delete
+// ---------------------------------------------------------------------------
+
+export async function updateClassAction(
+  _prev: CreateClassState,
+  formData: FormData,
+): Promise<CreateClassState> {
+  const ctx = await getAuthContext();
+  if (!ctx?.organizationId) return { error: 'No active organization' };
+  try {
+    assertCan(ctx, 'classes.manage');
+  } catch (e) {
+    if (e instanceof ForbiddenError) return { error: 'You cannot edit classes.' };
+    throw e;
+  }
+  const id = String(formData.get('id') ?? '');
+  if (!id) return { error: 'Missing class.' };
+
+  const parsed = createClassSchema.safeParse({
+    name: formData.get('name'),
+    description: formData.get('description') || '',
+    mode: (formData.get('mode') as string) || 'group',
+    capacity: formData.get('capacity') || undefined,
+    startDate: formData.get('startDate') || '',
+    status: (formData.get('status') as string) || 'active',
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Please check the form' };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('classes')
+    .update({
+      name: parsed.data.name,
+      description: parsed.data.description || null,
+      mode: parsed.data.mode,
+      capacity: parsed.data.capacity ?? null,
+      start_date: parsed.data.startDate || null,
+      status: parsed.data.status,
+    })
+    .eq('id', id)
+    .eq('organization_id', ctx.organizationId);
+  if (error) return { error: 'Could not save the class.' };
+
+  revalidatePath('/dashboard/classes');
+  revalidatePath(`/dashboard/classes/${id}`);
+  return { success: true };
+}
+
+export async function deleteClassAction(formData: FormData): Promise<void> {
+  const ctx = await getAuthContext();
+  if (!ctx?.organizationId || !can(ctx, 'classes.manage')) return;
+  const id = String(formData.get('id') ?? '');
+  if (!id) return;
+  const supabase = await createClient();
+  await supabase.from('classes').delete().eq('id', id).eq('organization_id', ctx.organizationId);
+  await supabase.from('audit_logs').insert({
+    organization_id: ctx.organizationId,
+    actor_id: ctx.userId,
+    action: 'class.deleted',
+    resource_type: 'class',
+    resource_id: id,
+  });
+  redirect('/dashboard/classes');
 }

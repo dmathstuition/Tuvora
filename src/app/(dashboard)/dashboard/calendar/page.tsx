@@ -2,10 +2,11 @@ import type { Metadata } from 'next';
 import { CalendarDays, GraduationCap, FileText, CalendarClock } from 'lucide-react';
 import { getAuthContext } from '@/lib/auth/context';
 import { can } from '@/lib/permissions';
-import { listUpcomingEvents, createEventAction } from '@/services/calendar';
+import { listUpcomingEvents, createEventAction, deleteEventAction } from '@/services/calendar';
 import { Card, CardContent } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { CreateDialog } from '@/components/ui/create-dialog';
+import { ConfirmButton } from '@/components/ui/confirm-button';
 
 export const metadata: Metadata = { title: 'Calendar' };
 
@@ -75,6 +76,12 @@ export default async function CalendarPage() {
                         {d.toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' })}
                       </p>
                     </div>
+                    {canManage && e.source === 'event' && (
+                      <form action={deleteEventAction}>
+                        <input type="hidden" name="id" value={e.id} />
+                        <ConfirmButton message="Delete this event?" label="" withIcon />
+                      </form>
+                    )}
                   </li>
                 );
               })}

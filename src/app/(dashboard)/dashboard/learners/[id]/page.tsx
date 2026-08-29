@@ -7,6 +7,12 @@ import { getLearnerRewards } from '@/services/rewards';
 import { getPortalAccessStatus } from '@/services/portal/invites';
 import { getLearnerIntake } from '@/services/enrollment';
 import { getLearnerPlacements } from '@/services/placement';
+import {
+  getLearnerBasics,
+  updateLearnerAction,
+  archiveLearnerAction,
+  deleteLearnerAction,
+} from '@/services/learners';
 import { levelFromPoints } from '@/constants/gamification';
 import { can } from '@/lib/permissions';
 import { getAuthContext } from '@/lib/auth/context';
@@ -15,6 +21,8 @@ import { PortalAccess } from './portal-access';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { CreateDialog } from '@/components/ui/create-dialog';
+import { ConfirmButton } from '@/components/ui/confirm-button';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { PerformanceChart } from '@/components/dashboard/performance-chart';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -32,13 +40,14 @@ export default async function LearnerProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [profile, rewards, ctx, portalAccess, intake, placements] = await Promise.all([
+  const [profile, rewards, ctx, portalAccess, intake, placements, basics] = await Promise.all([
     getLearnerProfile(id),
     getLearnerRewards(id),
     getAuthContext(),
     getPortalAccessStatus(id),
     getLearnerIntake(id),
     getLearnerPlacements(id),
+    getLearnerBasics(id),
   ]);
   if (!profile) notFound();
 
@@ -49,6 +58,9 @@ export default async function LearnerProfilePage({
   const level = levelFromPoints(rewards.total);
   const canReward = !!ctx && can(ctx, 'rewards.manage');
   const canManageLearner = !!ctx && can(ctx, 'learners.update');
+  const canArchive = !!ctx && can(ctx, 'learners.archive');
+  const canDelete = !!ctx && can(ctx, 'learners.delete');
+  const isActive = learner.status === 'active';
 
   return (
     <div className="space-y-6">
@@ -84,6 +96,39 @@ export default async function LearnerProfilePage({
                 <FileBarChart className="h-4 w-4" /> Progress report
               </Link>
             </Button>
+            {canManageLearner && basics && (
+              <CreateDialog
+                action={updateLearnerAction}
+                title="Edit learner"
+                triggerLabel="Edit"
+                submitLabel="Save changes"
+                triggerVariant="outline"
+                hidden={{ id: learner.id }}
+                fields={[
+                  { name: 'firstName', label: 'First name', required: true, defaultValue: basics.firstName },
+                  { name: 'lastName', label: 'Last name', defaultValue: basics.lastName },
+                  { name: 'email', label: 'Email', type: 'email', defaultValue: basics.email },
+                  { name: 'phone', label: 'Phone', defaultValue: basics.phone },
+                ]}
+              />
+            )}
+            {canArchive && isActive && (
+              <form action={archiveLearnerAction}>
+                <input type="hidden" name="id" value={learner.id} />
+                <Button type="submit" variant="outline">
+                  Archive
+                </Button>
+              </form>
+            )}
+            {canDelete && !isActive && (
+              <form action={deleteLearnerAction}>
+                <input type="hidden" name="id" value={learner.id} />
+                <ConfirmButton
+                  variant="outline"
+                  message={`Permanently delete ${learner.name}? This removes all their data and cannot be undone.`}
+                />
+              </form>
+            )}
           </div>
         </div>
       </div>
