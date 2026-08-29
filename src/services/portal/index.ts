@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { AVATARS, THEMES, DEFAULT_AVATAR, DEFAULT_THEME } from '@/constants/gamification';
+import { effectiveEnabledFeatures } from '@/lib/portal/feature-flags';
+import { getPlatformFeatureAvailability } from '@/services/portal/features';
 
 export interface PortalData {
   linked: boolean;
@@ -27,6 +29,19 @@ export interface PortalData {
     points: number;
     isMe: boolean;
   }[];
+  grade?: string | null;
+  studentId?: string;
+  tasksWaiting?: number;
+  streakDays?: number;
+  progress?: {
+    avgScore: number | null;
+    assignmentsDone: number;
+    assignmentsTotal: number;
+    attendancePct: number | null;
+  };
+  notices?: { id: string; subject: string; date: string }[];
+  quests?: { practiceRounds: number; mockExam: number; chestClaimed: boolean };
+  enabledFeatures?: string[];
 }
 
 /**
@@ -124,6 +139,85 @@ export async function getPortalData(): Promise<PortalData> {
   }
 
   const prefs = (org?.portal_preferences ?? {}) as { displayName?: string; welcome?: string };
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Home-app metrics: progress, streak, quests, notices, grade — in parallel.
+  const [
+    { data: subs },
+    { data: attendance },
+    { data: myEvents },
+    { data: notices },
+    { data: intake },
+    platformFlags,
+  ] = await Promise.all([
+    admin
+      .from('assignment_submissions')
+      .select('assignment_id, score, status')
+      .eq('learner_id', learner.id),
+    admin.from('attendance').select('status').eq('learner_id', learner.id),
+    admin
+      .from('reward_events')
+      .select('created_at, category')
+      .eq('learner_id', learner.id)
+      .order('created_at', { ascending: false })
+      .limit(80),
+    admin
+      .from('message_threads')
+      .select('id, subject, created_at')
+      .eq('organization_id', orgId)
+      .in('kind', ['announcement', 'notice'])
+      .order('created_at', { ascending: false })
+      .limit(3),
+    admin.from('learner_intake').select('current_grade').eq('learner_id', learner.id).maybeSingle(),
+    getPlatformFeatureAvailability(),
+  ]);
+
+  const subRows = subs ?? [];
+  const graded = subRows.filter((s) => s.status === 'graded' && s.score != null);
+  let avgScore: number | null = null;
+  if (graded.length > 0) {
+    const { data: assigns } = await admin
+      .from('assignments')
+      .select('id, max_points')
+      .in('id', graded.map((s) => s.assignment_id));
+    const maxById = new Map((assigns ?? []).map((a) => [a.id, a.max_points ?? 100]));
+    const pcts = graded.map((s) => {
+      const mp = maxById.get(s.assignment_id) || 100;
+      return Math.round(((s.score as number) / mp) * 100);
+    });
+    avgScore = Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length);
+  }
+  const assignmentsTotal = subRows.length;
+  const assignmentsDone = subRows.filter((s) => s.status === 'graded' || s.status === 'returned').length;
+  const tasksWaiting = subRows.filter((s) => s.status === 'assigned' || s.status === 'submitted' || s.status === 'late').length;
+
+  const attRows = attendance ?? [];
+  const attendancePct = attRows.length
+    ? Math.round((attRows.filter((a) => a.status === 'present' || a.status === 'late').length / attRows.length) * 100)
+    : null;
+
+  // Streak: consecutive calendar days (ending today) with at least one event.
+  const days = new Set((myEvents ?? []).map((e) => new Date(e.created_at).toISOString().slice(0, 10)));
+  let streakDays = 0;
+  for (let i = 0; i < 400; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    if (days.has(key)) streakDays++;
+    else if (i > 0) break; // today may legitimately be empty; stop at first prior gap
+    else continue;
+  }
+
+  // Daily quests + chest, from today's reward events.
+  const todaysEvents = (myEvents ?? []).filter((e) => e.created_at.slice(0, 10) === today);
+  const quests = {
+    practiceRounds: todaysEvents.filter((e) => e.category === 'game').length,
+    mockExam: todaysEvents.filter((e) => e.category === 'mock_exam').length,
+    chestClaimed: todaysEvents.some((e) => e.category === 'daily_reward'),
+  };
+
+  const enabledFeatures = [...effectiveEnabledFeatures(org?.portal_preferences, platformFlags)];
+  const studentId = `TVR-${new Date().getFullYear()}-${learner.id.slice(0, 4).toUpperCase()}`;
 
   return {
     linked: true,
@@ -145,6 +239,14 @@ export async function getPortalData(): Promise<PortalData> {
       date: r.created_at,
     })),
     leaderboard,
+    grade: intake?.current_grade ?? null,
+    studentId,
+    tasksWaiting,
+    streakDays,
+    progress: { avgScore, assignmentsDone, assignmentsTotal, attendancePct },
+    notices: (notices ?? []).map((n) => ({ id: n.id, subject: n.subject ?? 'Notice', date: n.created_at })),
+    quests,
+    enabledFeatures,
   };
 }
 
@@ -228,4 +330,44 @@ export async function recordGameScoreAction(
 
   revalidatePath('/portal');
   return { earned: correct, total: total ?? undefined };
+}
+
+export type ChestState = { error?: string; earned?: number; alreadyClaimed?: boolean };
+
+/** Claim the once-a-day reward chest (+5 points). Idempotent per calendar day. */
+export async function claimDailyRewardAction(): Promise<ChestState> {
+  const learnerId = await requireOwnLearnerId();
+  if (!learnerId) return { error: 'No linked learner account.' };
+  const admin = createAdminClient();
+
+  const { data: learner } = await admin
+    .from('learners')
+    .select('id, organization_id')
+    .eq('id', learnerId)
+    .maybeSingle();
+  if (!learner) return { error: 'No linked learner account.' };
+
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const { data: existing } = await admin
+    .from('reward_events')
+    .select('id')
+    .eq('learner_id', learnerId)
+    .eq('category', 'daily_reward')
+    .gte('created_at', startOfDay.toISOString())
+    .limit(1)
+    .maybeSingle();
+  if (existing) return { alreadyClaimed: true };
+
+  await admin.from('reward_events').insert({
+    organization_id: learner.organization_id,
+    learner_id: learnerId,
+    kind: 'reward',
+    points: 5,
+    category: 'daily_reward',
+    reason: 'Daily reward chest',
+  });
+
+  revalidatePath('/portal');
+  return { earned: 5 };
 }

@@ -1,63 +1,45 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Sparkles, Trophy, BookOpen, Star, ClipboardCheck, Medal, Gift, Rocket } from 'lucide-react';
+import {
+  Sparkles,
+  TrendingUp,
+  PencilLine,
+  CalendarDays,
+  Flame,
+  Target,
+  GraduationCap,
+  Gift,
+  Trophy,
+  Users,
+  Bell,
+  BookOpen,
+  ArrowRight,
+} from 'lucide-react';
 import { getPortalData } from '@/services/portal';
-import { getMyPlacements } from '@/services/portal/placement';
-import { avatarFor, themeFor, levelFromPoints, badgesFor } from '@/constants/gamification';
+import { avatarFor, themeFor, levelFromPoints, tierFor, TIERS } from '@/constants/gamification';
+import { LEARNER_FEATURES } from '@/constants/learner-features';
 import { logoutAction } from '@/app/(auth)/actions';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { QuickMaths } from './quick-maths';
-import { Personalise } from './personalise';
+import { PortalShell } from '@/components/portal/portal-shell';
+import { RewardChest } from '@/components/portal/reward-chest';
 
 export const metadata: Metadata = { title: 'My Portal' };
 
-// Claymorphism surface — soft puffy shadow so cards look moulded from clay.
-const clay =
-  'rounded-[1.75rem] bg-white shadow-[8px_8px_22px_rgba(99,102,241,0.16),-8px_-8px_22px_rgba(255,255,255,0.95)]';
-
-/** A bright, kid-friendly section card with a coloured title + icon. */
-function KidCard({
-  title,
-  emoji,
-  icon: Icon,
-  tint,
-  className,
-  children,
-}: {
-  title: string;
-  emoji?: string;
-  icon?: React.ComponentType<{ className?: string }>;
-  tint: string;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className={cn('p-5', clay, className)}>
-      <h3 className="mb-3 flex items-center gap-2 text-lg font-extrabold text-slate-800">
-        {Icon && (
-          <span className={cn('flex h-8 w-8 items-center justify-center rounded-xl', tint)}>
-            <Icon className="h-5 w-5" />
-          </span>
-        )}
-        {emoji && <span className="text-xl">{emoji}</span>}
-        {title}
-      </h3>
-      {children}
-    </section>
-  );
+function greeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
 }
 
-const MEDAL = ['🥇', '🥈', '🥉'];
-
-export default async function PortalPage() {
+export default async function PortalHome() {
   const data = await getPortalData();
-  const placements = data.linked ? await getMyPlacements() : [];
 
   if (!data.linked || !data.learner) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-sky-100 via-indigo-50 to-white p-6">
-        <div className={cn('mx-auto max-w-md p-8 text-center', clay)}>
+      <div className="flex min-h-screen items-center justify-center bg-[#f6f7fb] p-6">
+        <div className="mx-auto max-w-md rounded-3xl bg-white p-8 text-center shadow-sm">
           <div className="text-6xl">👋</div>
           <h1 className="mt-3 text-xl font-extrabold text-slate-800">No learner account linked yet</h1>
           <p className="mt-2 text-sm text-slate-500">
@@ -74,254 +56,248 @@ export default async function PortalPage() {
     );
   }
 
-  const { learner, org, points = 0, rank, classes = [], recent = [], leaderboard = [] } = data;
+  const {
+    learner,
+    org,
+    points = 0,
+    classes = [],
+    grade,
+    studentId,
+    tasksWaiting = 0,
+    streakDays = 0,
+    progress,
+    notices = [],
+    quests,
+    enabledFeatures = [],
+  } = data;
   const avatar = avatarFor(learner.avatarKey);
   const theme = themeFor(learner.themeKey);
   const level = levelFromPoints(points);
-  const badges = badgesFor(points, level.level, rank ?? null);
-  const earnedCount = badges.filter((b) => b.earned).length;
+  const tier = tierFor(points);
+  const enabled = new Set(enabledFeatures);
 
-  // Rainbow stat bubbles — each its own bright gradient.
-  const stats = [
-    { icon: Sparkles, label: 'Points', value: points, grad: 'from-amber-400 to-orange-500' },
-    { icon: Star, label: 'Level', value: level.level, grad: 'from-violet-400 to-purple-500' },
-    { icon: Trophy, label: 'Rank', value: rank ? `#${rank}` : '—', grad: 'from-pink-400 to-rose-500' },
-    { icon: Medal, label: 'Badges', value: `${earnedCount}/${badges.length}`, grad: 'from-emerald-400 to-teal-500' },
+  const playFeatures = LEARNER_FEATURES.filter((f) => f.group === 'Play' && enabled.has(f.key)).slice(0, 6);
+
+  const progressTiles = [
+    { icon: TrendingUp, tint: 'bg-emerald-50 text-emerald-600', bar: 'bg-emerald-500', label: 'Average score', value: progress?.avgScore != null ? `${progress.avgScore}%` : '—', pct: progress?.avgScore ?? 0 },
+    { icon: PencilLine, tint: 'bg-amber-50 text-amber-600', bar: 'bg-amber-500', label: 'Assignments', value: `${progress?.assignmentsDone ?? 0}/${progress?.assignmentsTotal ?? 0}`, pct: progress?.assignmentsTotal ? Math.round(((progress.assignmentsDone ?? 0) / progress.assignmentsTotal) * 100) : 0 },
+    { icon: CalendarDays, tint: 'bg-sky-50 text-sky-600', bar: 'bg-sky-500', label: 'Attendance', value: progress?.attendancePct != null ? `${progress.attendancePct}%` : '—', pct: progress?.attendancePct ?? 0 },
+    { icon: Flame, tint: 'bg-rose-50 text-rose-600', bar: 'bg-rose-500', label: 'Current streak', value: `${streakDays} day${streakDays === 1 ? '' : 's'}`, pct: Math.min(100, streakDays * 14) },
   ];
 
+  const questList = [
+    { icon: Target, tint: 'bg-amber-50 text-amber-600', label: 'Play two practice rounds', done: quests?.practiceRounds ?? 0, total: 2 },
+    { icon: GraduationCap, tint: 'bg-brand-50 text-brand-600', label: 'Finish a mock exam', done: quests?.mockExam ?? 0, total: 1 },
+    { icon: Gift, tint: 'bg-emerald-50 text-emerald-600', label: 'Open your daily reward', done: quests?.chestClaimed ? 1 : 0, total: 1 },
+  ];
+  const questsDone = questList.filter((q) => q.done >= q.total).length;
+
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-sky-100 via-fuchsia-50 to-amber-50">
-      {/* Playful floating blobs */}
-      <div className="pointer-events-none absolute -left-16 top-24 h-52 w-52 rounded-full bg-sky-300/40 blur-2xl" />
-      <div className="pointer-events-none absolute -right-16 top-10 h-56 w-56 rounded-full bg-pink-300/40 blur-2xl" />
-      <div className="pointer-events-none absolute bottom-24 left-1/3 h-48 w-48 rounded-full bg-amber-300/40 blur-2xl" />
-      <div className="pointer-events-none absolute bottom-10 right-1/4 h-40 w-40 rounded-full bg-emerald-300/40 blur-2xl" />
-
-      <div className="relative mx-auto max-w-5xl px-4 pb-16 pt-6">
-        {/* Top bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className={cn('px-4 py-2 text-sm font-extrabold text-indigo-600', clay)}>
-            🎓 {org?.displayName}
-          </span>
-          <div className="flex items-center gap-2">
-            <Personalise currentAvatar={learner.avatarKey} currentTheme={learner.themeKey} />
-            <form action={logoutAction}>
-              <Button variant="secondary" size="sm" type="submit" className="rounded-full">
-                Sign out
-              </Button>
-            </form>
-          </div>
-        </div>
-
-        {/* Hero */}
-        <div className={cn('mt-6 flex flex-col items-center gap-4 p-8 text-center sm:flex-row sm:text-left', clay)}>
-          <div
-            className={cn(
-              'flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-5xl ring-4 ring-white',
-              theme.gradient,
+    <PortalShell active="home" studentId={studentId} avatarEmoji={avatar.emoji} themeGradient={theme.gradient}>
+      <div className="space-y-6">
+        {/* Today's Focus hero */}
+        <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-brand-700 to-brand-900 p-6 text-white">
+          <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-white/70">
+            <Sparkles className="h-3.5 w-3.5" /> Today&apos;s Focus
+          </p>
+          <h1 className="mt-2 text-3xl font-extrabold leading-tight">
+            {greeting()}, {learner.firstName}! 👋
+          </h1>
+          <p className="mt-2 max-w-md text-white/80">
+            {tasksWaiting > 0
+              ? `You have ${tasksWaiting} task${tasksWaiting === 1 ? '' : 's'} waiting. Complete ${tasksWaiting === 1 ? 'it' : 'them'} and keep your streak alive.`
+              : (org?.welcome ?? "You're all caught up — try a game to earn more points! 🚀")}
+          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {grade && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-sm font-bold">
+                <GraduationCap className="h-4 w-4" /> {grade}
+              </span>
             )}
-            style={{ boxShadow: '10px 10px 24px rgba(99,102,241,0.30), -8px -8px 20px rgba(255,255,255,0.9)' }}
-          >
-            {avatar.emoji}
-          </div>
-          <div className="flex-1">
-            <h1 className="text-3xl font-extrabold text-slate-800">Hi, {learner.firstName}! 👋</h1>
-            <p className="mt-1 text-slate-500">
-              {org?.welcome ?? "Let's learn something awesome today! 🚀"}
-            </p>
-            <div className="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
-              <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-bold text-amber-700">
-                ✨ {points} points
-              </span>
-              <span className="rounded-full bg-violet-100 px-3 py-1 text-sm font-bold text-violet-700">
-                ⭐ Level {level.level}
-              </span>
-              {rank && (
-                <span className="rounded-full bg-pink-100 px-3 py-1 text-sm font-bold text-pink-700">
-                  🏆 Rank #{rank}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Rainbow stat bubbles */}
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {stats.map((s) => {
-            const Icon = s.icon;
-            return (
-              <div key={s.label} className={cn('flex flex-col items-center gap-2 p-4 text-center', clay)}>
-                <div className={cn('flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br text-white', s.grad)}>
-                  <Icon className="h-6 w-6" />
-                </div>
-                <p className="text-2xl font-extrabold text-slate-800">{s.value}</p>
-                <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{s.label}</p>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Level progress */}
-        <div className={cn('mt-5 p-5', clay)}>
-          <div className="mb-2 flex items-center justify-between text-sm font-bold">
-            <span className="text-slate-700">⭐ Level {level.level}</span>
-            <span className="text-slate-400">
-              {level.intoLevel}/{level.forNext} to level {level.level + 1}
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/90 px-3 py-1 text-sm font-bold text-brand-900">
+              <Flame className="h-4 w-4" /> {streakDays}-day streak
             </span>
           </div>
-          <div className="h-5 w-full overflow-hidden rounded-full bg-slate-100 shadow-[inset_3px_3px_8px_rgba(99,102,241,0.18)]">
-            <div
-              className={cn('h-full rounded-full bg-gradient-to-r transition-all', theme.gradient)}
-              style={{ width: `${level.progress}%` }}
-            />
+        </section>
+
+        {/* My progress */}
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-lg font-extrabold text-slate-800">My progress</h2>
+            <Link href="/portal/progress" className="flex items-center gap-1 text-sm font-bold text-amber-600">
+              Details <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
-        </div>
-
-        {/* Play & Earn + Leaderboard */}
-        <div className="mt-5 grid gap-4 lg:grid-cols-2">
-          <QuickMaths />
-          <KidCard title="Leaderboard" icon={Trophy} tint="bg-amber-100 text-amber-600">
-            {leaderboard.length === 0 ? (
-              <p className="text-sm text-slate-500">Earn points to climb the board! 🧗</p>
-            ) : (
-              <ul className="space-y-2">
-                {leaderboard.map((p) => {
-                  const av = avatarFor(p.avatarKey);
-                  return (
-                    <li
-                      key={p.id}
-                      className={cn(
-                        'flex items-center gap-3 rounded-2xl px-3 py-2',
-                        p.isMe
-                          ? 'bg-gradient-to-r from-indigo-100 to-violet-100 ring-2 ring-violet-300'
-                          : 'bg-slate-50',
-                      )}
-                    >
-                      <span className="w-6 text-center text-lg font-extrabold">
-                        {MEDAL[p.rank - 1] ?? `#${p.rank}`}
-                      </span>
-                      <span className="text-2xl">{av.emoji}</span>
-                      <span className="flex-1 truncate text-sm font-bold text-slate-700">
-                        {p.name} {p.isMe && <span className="text-violet-500">(you)</span>}
-                      </span>
-                      <span className="text-sm font-extrabold text-amber-600">{p.points}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </KidCard>
-        </div>
-
-        {/* Rewards + Aptitude tests */}
-        <div className="mt-5 grid gap-4 lg:grid-cols-2">
-          <KidCard title="My Rewards" icon={Gift} tint="bg-pink-100 text-pink-600">
-            {recent.length === 0 ? (
-              <p className="text-sm text-slate-500">Do great work to earn rewards! 🌈</p>
-            ) : (
-              <ul className="space-y-2">
-                {recent.map((r) => (
-                  <li key={r.id} className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2">
-                    <span className="text-sm text-slate-600">{r.reason ?? 'Reward'}</span>
-                    <span className={r.points >= 0 ? 'font-extrabold text-emerald-500' : 'font-extrabold text-rose-500'}>
-                      {r.points >= 0 ? `+${r.points}` : r.points}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </KidCard>
-
-          <KidCard title="Aptitude Tests" icon={ClipboardCheck} tint="bg-violet-100 text-violet-600">
-            {placements.length === 0 ? (
-              <p className="text-sm text-slate-500">No tests right now — check back soon! 📝</p>
-            ) : (
-              <ul className="space-y-2">
-                {placements.map((p) => {
-                  const done = p.status === 'graded';
-                  return (
-                    <li key={p.attemptId}>
-                      <Link
-                        href={`/portal/placement/${p.attemptId}`}
-                        className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 transition hover:bg-violet-50"
-                      >
-                        <span>
-                          <span className="block text-sm font-bold text-slate-700">{p.title}</span>
-                          <span className="text-xs text-slate-400">
-                            {p.subjectLabel ? `${p.subjectLabel} · ` : ''}
-                            {p.questionCount} questions
-                          </span>
-                        </span>
-                        {done ? (
-                          <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-600">
-                            {p.percentage}% · {p.placementLevel}
-                          </span>
-                        ) : (
-                          <span className="rounded-full bg-violet-500 px-4 py-1.5 text-xs font-bold text-white">
-                            Start →
-                          </span>
-                        )}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </KidCard>
-        </div>
-
-        {/* Badges */}
-        <KidCard title="My Badges" icon={Medal} tint="bg-emerald-100 text-emerald-600" className="mt-5">
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
-            {badges.map((b) => (
-              <div
-                key={b.key}
-                title={b.hint}
-                className={cn(
-                  'flex flex-col items-center gap-1 rounded-2xl p-3 text-center',
-                  b.earned
-                    ? 'bg-gradient-to-br from-amber-100 to-pink-100'
-                    : 'bg-slate-50 opacity-60 grayscale',
-                )}
-              >
-                <span className="text-3xl">{b.earned ? b.emoji : '🔒'}</span>
-                <span className="text-[11px] font-bold leading-tight text-slate-600">{b.label}</span>
-              </div>
-            ))}
-          </div>
-        </KidCard>
-
-        {/* Classes */}
-        <KidCard title="My Classes" icon={BookOpen} tint="bg-sky-100 text-sky-600" className="mt-5">
-          {classes.length === 0 ? (
-            <p className="text-sm text-slate-500">You&apos;re not in any classes yet. 📚</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {classes.map((c, i) => {
-                const tints = [
-                  'bg-sky-100 text-sky-700',
-                  'bg-pink-100 text-pink-700',
-                  'bg-amber-100 text-amber-700',
-                  'bg-emerald-100 text-emerald-700',
-                  'bg-violet-100 text-violet-700',
-                ];
-                return (
-                  <span
-                    key={c.id}
-                    className={cn('rounded-full px-4 py-2 text-sm font-bold', tints[i % tints.length])}
-                  >
-                    {c.name}
+          <div className="grid grid-cols-2 gap-3">
+            {progressTiles.map((t) => {
+              const Icon = t.icon;
+              return (
+                <div key={t.label} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                  <span className={cn('flex h-10 w-10 items-center justify-center rounded-xl', t.tint)}>
+                    <Icon className="h-5 w-5" />
                   </span>
+                  <p className="mt-3 text-2xl font-extrabold text-brand-900">{t.value}</p>
+                  <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{t.label}</p>
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div className={cn('h-full rounded-full', t.bar)} style={{ width: `${Math.min(100, t.pct)}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Play & learn */}
+        {playFeatures.length > 0 && (
+          <section>
+            <h2 className="mb-3 flex items-center gap-2 text-lg font-extrabold text-slate-800">
+              <Sparkles className="h-5 w-5 text-amber-500" /> Play &amp; learn
+              <span className="text-sm font-medium text-slate-400">— pick one and go</span>
+            </h2>
+            <div className="grid grid-cols-2 gap-3">
+              {playFeatures.map((f) => {
+                const Icon = f.icon;
+                const soon = f.status === 'soon';
+                const card = (
+                  <div className={cn('relative overflow-hidden rounded-2xl bg-gradient-to-br p-4 text-white', f.accent)}>
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <p className="mt-6 text-lg font-extrabold">{f.label}</p>
+                    <p className="text-sm text-white/80">{soon ? 'Coming soon' : f.tagline}</p>
+                  </div>
                 );
+                return soon ? <div key={f.key}>{card}</div> : <Link key={f.key} href={f.href}>{card}</Link>;
               })}
             </div>
-          )}
-        </KidCard>
+          </section>
+        )}
 
-        <p className="mt-8 flex items-center justify-center gap-1 text-center text-sm font-semibold text-slate-400">
-          <Rocket className="h-4 w-4" /> Keep going, {learner.firstName} — you&apos;re doing amazing!
-        </p>
+        {/* Daily reward */}
+        <RewardChest claimed={quests?.chestClaimed ?? false} />
+
+        {/* Daily quests */}
+        <section className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-lg font-extrabold text-slate-800">
+              <Target className="h-5 w-5 text-amber-500" /> Daily quests
+            </h2>
+            <span className="text-sm font-bold text-slate-400">{questsDone}/3 done</span>
+          </div>
+          <ul className="space-y-2">
+            {questList.map((q) => {
+              const Icon = q.icon;
+              const complete = q.done >= q.total;
+              return (
+                <li key={q.label} className="flex items-center gap-3 rounded-2xl bg-slate-50 px-3 py-3">
+                  <span className={cn('flex h-9 w-9 items-center justify-center rounded-xl', q.tint)}>
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <span className={cn('flex-1 text-sm font-bold', complete ? 'text-emerald-600 line-through' : 'text-slate-700')}>
+                    {q.label}
+                  </span>
+                  <span className="text-sm font-bold text-slate-400">
+                    {Math.min(q.done, q.total)}/{q.total}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-3 text-center text-sm text-slate-500">
+            Clear all three today for a <span className="font-bold text-amber-600">+15</span> bonus.
+          </p>
+        </section>
+
+        {/* League / tier card */}
+        <section className="overflow-hidden rounded-3xl bg-brand-900 p-6 text-white">
+          <div className="flex flex-col items-center text-center">
+            <div className="flex h-28 w-28 flex-col items-center justify-center rounded-full border-4 border-amber-400">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">Level</span>
+              <span className="text-4xl font-extrabold">{level.level}</span>
+              <span className="text-xs font-bold text-amber-400">{tier.label}</span>
+            </div>
+            <p className="mt-4 flex items-center gap-2 text-xl font-extrabold">
+              <Trophy className="h-5 w-5 text-amber-400" /> {points} reward points
+            </p>
+            <p className="text-sm text-white/70">
+              {tier.nextLabel ? `${tier.toNext} pts to ${tier.nextLabel}` : "You've reached the top tier! 👑"}
+            </p>
+          </div>
+          <div className="mt-4">
+            <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/15">
+              <div className="h-full rounded-full bg-amber-400" style={{ width: `${tier.progress}%` }} />
+            </div>
+            <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+              {TIERS.map((t, i) => (
+                <span
+                  key={t.key}
+                  className={cn(
+                    'rounded-full px-2.5 py-1 text-xs font-bold',
+                    i === tier.index ? 'bg-amber-400 text-brand-900' : 'bg-white/10 text-white/60',
+                  )}
+                >
+                  {t.label}
+                </span>
+              ))}
+            </div>
+          </div>
+          <Link
+            href="/portal/progress"
+            className="mt-4 flex items-center justify-center gap-2 rounded-full bg-white/10 py-2.5 text-sm font-bold hover:bg-white/20"
+          >
+            <Users className="h-4 w-4" /> This week&apos;s league <ArrowRight className="h-4 w-4" />
+          </Link>
+        </section>
+
+        {/* Latest notices */}
+        {notices.length > 0 && (
+          <section>
+            <h2 className="mb-3 flex items-center gap-2 text-lg font-extrabold text-slate-800">
+              <Bell className="h-5 w-5 text-amber-500" /> Latest notices
+            </h2>
+            <ul className="space-y-2">
+              {notices.map((n) => (
+                <li key={n.id} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                    <Bell className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-bold text-brand-800">{n.subject}</p>
+                    <p className="text-xs text-slate-400">{new Date(n.date).toLocaleDateString()}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {/* My classes */}
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-lg font-extrabold text-slate-800">
+              <BookOpen className="h-5 w-5 text-brand-600" /> My classes
+            </h2>
+            <Link href="/portal/learn" className="flex items-center gap-1 text-sm font-bold text-amber-600">
+              All <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          {classes.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-center">
+              <CalendarDays className="mx-auto h-8 w-8 text-slate-300" />
+              <p className="mt-2 font-bold text-brand-800">No classes scheduled</p>
+              <p className="text-sm text-slate-400">Your next live class will appear here.</p>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {classes.map((c) => (
+                <span key={c.id} className="rounded-full bg-white px-4 py-2 text-sm font-bold text-brand-700 shadow-sm">
+                  {c.name}
+                </span>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
-    </div>
+    </PortalShell>
   );
 }

@@ -824,6 +824,12 @@ export interface Database {
         Update: Record<string, unknown>;
         Relationships: [];
       };
+      platform_settings: {
+        Row: { key: string; value: Json; updated_at: string };
+        Insert: { key: string; value?: Json; updated_at?: string };
+        Update: { value?: Json; updated_at?: string };
+        Relationships: [];
+      };
       audit_logs: {
         Row: {
           id: string;

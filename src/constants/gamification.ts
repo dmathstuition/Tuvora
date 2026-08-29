@@ -54,6 +54,46 @@ export const THEMES = [
 
 export const DEFAULT_THEME = 'indigo';
 
+/** League tiers by cumulative points, with the next threshold for the meter. */
+export const TIERS = [
+  { key: 'bronze', label: 'Bronze', min: 0, color: '#b45309' },
+  { key: 'silver', label: 'Silver', min: 100, color: '#64748b' },
+  { key: 'gold', label: 'Gold', min: 300, color: '#f59e0b' },
+  { key: 'platinum', label: 'Platinum', min: 600, color: '#22d3ee' },
+  { key: 'diamond', label: 'Diamond', min: 1000, color: '#818cf8' },
+] as const;
+
+export function tierFor(points: number): {
+  index: number;
+  label: string;
+  color: string;
+  nextLabel: string | null;
+  toNext: number;
+  progress: number;
+} {
+  const p = Math.max(0, points);
+  let i = 0;
+  for (let k = TIERS.length - 1; k >= 0; k--) {
+    if (p >= TIERS[k]!.min) {
+      i = k;
+      break;
+    }
+  }
+  const cur = TIERS[i]!;
+  const next = TIERS[i + 1];
+  const toNext = next ? next.min - p : 0;
+  const span = next ? next.min - cur.min : 1;
+  const into = p - cur.min;
+  return {
+    index: i,
+    label: cur.label,
+    color: cur.color,
+    nextLabel: next?.label ?? null,
+    toNext,
+    progress: next ? Math.min(100, Math.round((into / span) * 100)) : 100,
+  };
+}
+
 /** Fun achievement badges, earned from points / level / rank. Presentation only. */
 export const BADGES = [
   { key: 'first_points', emoji: '✨', label: 'First Sparks', hint: 'Earn your first points' },

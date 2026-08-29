@@ -1,5 +1,6 @@
 import {
   LayoutDashboard,
+  LayoutGrid,
   Building2,
   Users,
   GraduationCap,
@@ -60,6 +61,7 @@ export const ADMIN_NAV: AdminNavSection[] = [
   {
     label: 'Support & System',
     items: [
+      { title: 'Learner Features', href: '/admin/learner-features', icon: LayoutGrid },
       { title: 'Support Tickets', href: '/admin/support', icon: LifeBuoy },
       { title: 'Audit Logs', href: '/admin/audit', icon: ScrollText },
       { title: 'System Settings', href: '/admin/settings', icon: Settings },

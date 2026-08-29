@@ -3,15 +3,21 @@ import Link from 'next/link';
 import { Users } from 'lucide-react';
 import { getAuthContext } from '@/lib/auth/context';
 import { getOrgSettings } from '@/services/organizations/settings';
+import { getOrgFeatureSettings } from '@/services/portal/features';
 import { can } from '@/lib/permissions';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { OrgProfileForm, BrandingForm, LogoUpload } from './settings-forms';
+import { StudentAppForm } from './student-app-form';
 
 export const metadata: Metadata = { title: 'Settings' };
 
 export default async function SettingsPage() {
-  const [ctx, settings] = await Promise.all([getAuthContext(), getOrgSettings()]);
+  const [ctx, settings, features] = await Promise.all([
+    getAuthContext(),
+    getOrgSettings(),
+    getOrgFeatureSettings(),
+  ]);
   if (!settings) return null;
 
   const canSettings = !!ctx && can(ctx, 'org.settings.manage');
@@ -62,6 +68,20 @@ export default async function SettingsPage() {
           <div className="border-t pt-6">
             <BrandingForm settings={settings} disabled={!canBranding} />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Student app features</CardTitle>
+          <CardDescription>
+            Choose which features your learners see in their app. Turn off anything you&apos;re not
+            using yet.
+            {!canBranding && ' You need admin access to edit these.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <StudentAppForm features={features} disabled={!canBranding} />
         </CardContent>
       </Card>
     </div>
