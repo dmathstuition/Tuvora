@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getAuthContext } from '@/lib/auth/context';
 import { assertCan, ForbiddenError } from '@/lib/permissions';
-import { publicEnv } from '@/lib/public-env';
+import { getRequestBaseUrl } from '@/lib/base-url';
 
 export interface PortalAccessStatus {
   linked: boolean;
@@ -14,8 +14,8 @@ export interface PortalAccessStatus {
   invite: { token: string; url: string; acceptedAt: string | null } | null;
 }
 
-function inviteUrl(token: string): string {
-  return `${publicEnv.appUrl}/signup?invite=${token}`;
+async function inviteUrl(token: string): Promise<string> {
+  return `${await getRequestBaseUrl()}/signup?invite=${token}`;
 }
 
 /** Portal-access status for a learner: linked, invited (with link), or neither. */
@@ -42,7 +42,9 @@ export async function getPortalAccessStatus(learnerId: string): Promise<PortalAc
   return {
     linked: !!learner?.user_id,
     email: learner?.email ?? null,
-    invite: invite ? { token: invite.token, url: inviteUrl(invite.token), acceptedAt: invite.accepted_at } : null,
+    invite: invite
+      ? { token: invite.token, url: await inviteUrl(invite.token), acceptedAt: invite.accepted_at }
+      : null,
   };
 }
 
@@ -105,7 +107,7 @@ export async function invitePortalAction(
 
   // TODO: when Resend is wired, email the invite link to learner.email here.
   revalidatePath(`/dashboard/learners/${learnerId}`);
-  return { url: inviteUrl(token) };
+  return { url: await inviteUrl(token) };
 }
 
 /**

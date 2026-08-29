@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Sparkles, Trophy, BookOpen } from 'lucide-react';
+import { Sparkles, Trophy, BookOpen, Star } from 'lucide-react';
 import { getPortalData } from '@/services/portal';
 import { avatarFor, themeFor, levelFromPoints } from '@/constants/gamification';
 import { logoutAction } from '@/app/(auth)/actions';
@@ -10,23 +10,30 @@ import { Personalise } from './personalise';
 
 export const metadata: Metadata = { title: 'My Portal' };
 
+// Claymorphism surfaces — soft, puffy double shadows (dark + light) so cards
+// look moulded from clay. Literal classes so Tailwind generates them.
+const clay = 'rounded-[1.75rem] bg-white shadow-[8px_8px_22px_rgba(99,102,241,0.18),-8px_-8px_22px_rgba(255,255,255,0.95)]';
+const clayInset = 'rounded-full shadow-[inset_4px_4px_10px_rgba(99,102,241,0.20),inset_-4px_-4px_10px_rgba(255,255,255,0.9)]';
+
 export default async function PortalPage() {
   const data = await getPortalData();
 
   if (!data.linked || !data.learner) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-4 p-6 text-center">
-        <div className="text-5xl">👋</div>
-        <h1 className="text-xl font-bold">No learner account linked yet</h1>
-        <p className="text-sm text-muted-foreground">
-          Ask your tutor to add you with this email address, then refresh — your portal will appear
-          here automatically.
-        </p>
-        <form action={logoutAction}>
-          <Button variant="outline" type="submit">
-            Sign out
-          </Button>
-        </form>
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-sky-100 via-indigo-50 to-white p-6">
+        <div className={cn('mx-auto max-w-md p-8 text-center', clay)}>
+          <div className="text-6xl">👋</div>
+          <h1 className="mt-3 text-xl font-extrabold text-slate-800">No learner account linked yet</h1>
+          <p className="mt-2 text-sm text-slate-500">
+            Ask your tutor to add you with this email address, then refresh — your portal will
+            appear here automatically.
+          </p>
+          <form action={logoutAction} className="mt-5">
+            <Button variant="outline" type="submit" className="rounded-full">
+              Sign out
+            </Button>
+          </form>
+        </div>
       </div>
     );
   }
@@ -36,114 +43,116 @@ export default async function PortalPage() {
   const theme = themeFor(learner.themeKey);
   const level = levelFromPoints(points);
 
+  const stats = [
+    { icon: Sparkles, label: 'Points', value: points, tint: 'text-amber-500' },
+    { icon: Star, label: 'Level', value: level.level, tint: 'text-indigo-500' },
+    { icon: Trophy, label: 'Rank', value: rank ? `#${rank}` : '—', tint: 'text-pink-500' },
+  ];
+
   return (
-    <div className="min-h-screen bg-muted/20 pb-16">
-      {/* Hero */}
-      <div className={cn('bg-gradient-to-br px-4 pb-16 pt-8 text-white', theme.gradient)}>
-        <div className="mx-auto flex max-w-4xl items-center justify-between">
-          <span className="text-sm font-semibold uppercase tracking-widest text-white/80">
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-sky-100 via-indigo-50 to-white">
+      {/* Decorative clay blobs */}
+      <div className="pointer-events-none absolute -left-16 top-24 h-52 w-52 rounded-full bg-sky-300/40 blur-2xl" />
+      <div className="pointer-events-none absolute -right-16 top-10 h-56 w-56 rounded-full bg-pink-300/40 blur-2xl" />
+      <div className="pointer-events-none absolute bottom-10 left-1/3 h-48 w-48 rounded-full bg-violet-300/40 blur-2xl" />
+
+      <div className="relative mx-auto max-w-4xl px-4 pb-16 pt-6">
+        {/* Top bar */}
+        <div className="flex items-center justify-between">
+          <span className={cn('px-4 py-2 text-sm font-bold text-slate-700', clay)}>
             {org?.displayName}
           </span>
           <div className="flex items-center gap-2">
             <Personalise currentAvatar={learner.avatarKey} currentTheme={learner.themeKey} />
             <form action={logoutAction}>
-              <Button
-                variant="secondary"
-                size="sm"
-                type="submit"
-                className="bg-white/20 text-white hover:bg-white/30"
-              >
+              <Button variant="secondary" size="sm" type="submit" className="rounded-full">
                 Sign out
               </Button>
             </form>
           </div>
         </div>
 
-        <div className="mx-auto mt-6 flex max-w-4xl flex-col items-center text-center">
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white/20 text-6xl shadow-lg ring-4 ring-white/30">
+        {/* Hero */}
+        <div className={cn('mt-6 flex flex-col items-center p-8 text-center', clay)}>
+          <div
+            className={cn(
+              'flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br text-6xl',
+              theme.gradient,
+            )}
+            style={{ boxShadow: '10px 10px 24px rgba(99,102,241,0.35), -8px -8px 20px rgba(255,255,255,0.9)' }}
+          >
             {avatar.emoji}
           </div>
-          <h1 className="mt-4 text-3xl font-bold">Hi, {learner.firstName}! 👋</h1>
-          {org?.welcome && <p className="mt-1 max-w-lg text-white/85">{org.welcome}</p>}
+          <h1 className="mt-4 text-3xl font-extrabold text-slate-800">Hi, {learner.firstName}! 👋</h1>
+          {org?.welcome && <p className="mt-1 max-w-md text-slate-500">{org.welcome}</p>}
         </div>
-      </div>
 
-      {/* Stat cards overlapping the hero */}
-      <div className="mx-auto -mt-10 grid max-w-4xl grid-cols-3 gap-3 px-4">
-        {[
-          { icon: Sparkles, label: 'Points', value: points },
-          { icon: Trophy, label: 'Level', value: level.level },
-          { icon: Trophy, label: 'Rank', value: rank ? `#${rank}` : '—' },
-        ].map((s) => {
-          const Icon = s.icon;
-          return (
-            <div
-              key={s.label}
-              className="rounded-2xl border bg-card p-4 text-center shadow-sm"
-            >
-              <Icon className="mx-auto mb-1 h-5 w-5 text-primary" />
-              <p className="text-2xl font-bold">{s.value}</p>
-              <p className="text-xs text-muted-foreground">{s.label}</p>
-            </div>
-          );
-        })}
-      </div>
+        {/* Stat pills */}
+        <div className="mt-5 grid grid-cols-3 gap-3">
+          {stats.map((s) => {
+            const Icon = s.icon;
+            return (
+              <div key={s.label} className={cn('flex flex-col items-center gap-1 p-4', clay)}>
+                <div className={cn('flex h-11 w-11 items-center justify-center bg-white', clayInset)}>
+                  <Icon className={cn('h-5 w-5', s.tint)} />
+                </div>
+                <p className="text-2xl font-extrabold text-slate-800">{s.value}</p>
+                <p className="text-xs font-semibold text-slate-400">{s.label}</p>
+              </div>
+            );
+          })}
+        </div>
 
-      {/* Level progress */}
-      <div className="mx-auto mt-4 max-w-4xl px-4">
-        <div className="rounded-2xl border bg-card p-4">
-          <div className="mb-1 flex items-center justify-between text-sm">
-            <span className="font-medium">Level {level.level}</span>
-            <span className="text-muted-foreground">
+        {/* Level progress */}
+        <div className={cn('mt-5 p-5', clay)}>
+          <div className="mb-2 flex items-center justify-between text-sm font-semibold">
+            <span className="text-slate-700">Level {level.level}</span>
+            <span className="text-slate-400">
               {level.intoLevel}/{level.forNext} to level {level.level + 1}
             </span>
           </div>
-          <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
-            <div className={cn('h-full bg-gradient-to-r', theme.gradient)} style={{ width: `${level.progress}%` }} />
+          <div className="h-4 w-full overflow-hidden rounded-full bg-slate-100 shadow-[inset_3px_3px_8px_rgba(99,102,241,0.18)]">
+            <div className={cn('h-full rounded-full bg-gradient-to-r', theme.gradient)} style={{ width: `${level.progress}%` }} />
           </div>
         </div>
-      </div>
 
-      {/* Game + content */}
-      <div className="mx-auto mt-4 grid max-w-4xl gap-4 px-4 lg:grid-cols-2">
-        <QuickMaths />
-
-        <div className="rounded-2xl border bg-card p-5">
-          <h3 className="flex items-center gap-2 font-semibold">
-            <Sparkles className="h-5 w-5" /> Recent rewards
-          </h3>
-          {recent.length === 0 ? (
-            <p className="mt-3 text-sm text-muted-foreground">
-              Earn points by playing games and doing great work!
-            </p>
-          ) : (
-            <ul className="mt-3 space-y-2 text-sm">
-              {recent.map((r) => (
-                <li key={r.id} className="flex items-center justify-between">
-                  <span className="text-muted-foreground">{r.reason ?? 'Reward'}</span>
-                  <span className={r.points >= 0 ? 'font-bold text-success' : 'font-bold text-destructive'}>
-                    {r.points >= 0 ? `+${r.points}` : r.points}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+        {/* Game + rewards */}
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          <QuickMaths />
+          <div className={cn('p-5', clay)}>
+            <h3 className="flex items-center gap-2 font-extrabold text-slate-800">
+              <Sparkles className="h-5 w-5 text-amber-500" /> Recent rewards
+            </h3>
+            {recent.length === 0 ? (
+              <p className="mt-3 text-sm text-slate-500">Play games and do great work to earn points!</p>
+            ) : (
+              <ul className="mt-3 space-y-2 text-sm">
+                {recent.map((r) => (
+                  <li key={r.id} className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2">
+                    <span className="text-slate-600">{r.reason ?? 'Reward'}</span>
+                    <span className={r.points >= 0 ? 'font-extrabold text-emerald-500' : 'font-extrabold text-rose-500'}>
+                      {r.points >= 0 ? `+${r.points}` : r.points}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
 
-        <div className="rounded-2xl border bg-card p-5 lg:col-span-2">
-          <h3 className="flex items-center gap-2 font-semibold">
-            <BookOpen className="h-5 w-5" /> My classes
+        {/* Classes */}
+        <div className={cn('mt-5 p-5', clay)}>
+          <h3 className="flex items-center gap-2 font-extrabold text-slate-800">
+            <BookOpen className="h-5 w-5 text-indigo-500" /> My classes
           </h3>
           {classes.length === 0 ? (
-            <p className="mt-3 text-sm text-muted-foreground">
-              You&apos;re not in any classes yet.
-            </p>
+            <p className="mt-3 text-sm text-slate-500">You&apos;re not in any classes yet.</p>
           ) : (
             <div className="mt-3 flex flex-wrap gap-2">
               {classes.map((c) => (
                 <span
                   key={c.id}
-                  className="rounded-full bg-accent px-3 py-1 text-sm text-accent-foreground"
+                  className="rounded-full bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-600 shadow-[3px_3px_8px_rgba(99,102,241,0.15),-3px_-3px_8px_rgba(255,255,255,0.9)]"
                 >
                   {c.name}
                 </span>

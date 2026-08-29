@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getAuthContext } from '@/lib/auth/context';
 import { assertCan, ForbiddenError } from '@/lib/permissions';
-import { publicEnv } from '@/lib/public-env';
+import { getRequestBaseUrl } from '@/lib/base-url';
 import { inviteMemberSchema } from '@/schemas/organization';
 import type { OrgRole } from '@/constants/roles';
 
@@ -58,11 +58,12 @@ export async function listTeam(): Promise<{ members: MemberRow[]; invites: Pendi
       .select('id, email, role, token, accepted_at')
       .eq('organization_id', ctx.organizationId)
       .is('accepted_at', null);
+    const baseUrl = await getRequestBaseUrl();
     invites = (inv ?? []).map((i) => ({
       id: i.id,
       email: i.email,
       role: i.role,
-      url: `${publicEnv.appUrl}/accept-invite?token=${i.token}`,
+      url: `${baseUrl}/accept-invite?token=${i.token}`,
     }));
   }
 
@@ -126,7 +127,7 @@ export async function inviteMemberAction(
 
   // TODO: email the invite via Resend when wired.
   revalidatePath('/dashboard/settings/team');
-  return { url: `${publicEnv.appUrl}/accept-invite?token=${token}` };
+  return { url: `${await getRequestBaseUrl()}/accept-invite?token=${token}` };
 }
 
 export type MemberActionState = { error?: string; success?: boolean };
