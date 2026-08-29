@@ -97,7 +97,7 @@ export const LEARNER_FEATURES: LearnerFeature[] = [
   { key: 'notices', label: 'Notices', group: 'Account', href: '/portal', status: 'live', icon: Bell, accent: 'from-amber-500 to-orange-600' },
   { key: 'notifications', label: 'Notifications', group: 'Account', href: '/portal/more', status: 'soon', icon: Bell, accent: 'from-rose-500 to-pink-600' },
   { key: 'calendar', label: 'Calendar', group: 'Account', href: '/portal/more', status: 'soon', icon: Calendar, accent: 'from-sky-500 to-blue-600' },
-  { key: 'rewards_shop', label: 'Rewards shop', group: 'Account', href: '/portal/more', status: 'soon', icon: CreditCard, accent: 'from-violet-500 to-purple-600' },
+  { key: 'rewards_shop', label: 'Rewards shop', group: 'Account', href: '/portal/shop', status: 'live', icon: CreditCard, accent: 'from-violet-500 to-purple-600' },
   { key: 'my_payments', label: 'My payments', group: 'Account', href: '/portal/more', status: 'soon', icon: CreditCard, accent: 'from-emerald-500 to-teal-600' },
   { key: 'avatar_studio', label: 'Avatar Studio', group: 'Account', href: '/portal/profile', status: 'live', icon: Sparkles, accent: 'from-fuchsia-500 to-pink-600' },
   { key: 'profile', label: 'Profile', group: 'Account', href: '/portal/profile', status: 'live', icon: User, accent: 'from-slate-500 to-slate-700' },

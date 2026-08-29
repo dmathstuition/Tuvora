@@ -830,6 +830,52 @@ export interface Database {
         Update: { value?: Json; updated_at?: string };
         Relationships: [];
       };
+      reward_shop_items: {
+        Row: {
+          id: string;
+          organization_id: string;
+          name: string;
+          emoji: string | null;
+          description: string | null;
+          cost: number;
+          stock: number | null;
+          active: boolean;
+        } & Timestamps;
+        Insert: {
+          organization_id: string;
+          name: string;
+          cost: number;
+          emoji?: string | null;
+          description?: string | null;
+          stock?: number | null;
+          active?: boolean;
+        } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      reward_redemptions: {
+        Row: {
+          id: string;
+          organization_id: string;
+          learner_id: string;
+          item_id: string | null;
+          item_name: string;
+          points_spent: number;
+          status: 'pending' | 'approved' | 'fulfilled' | 'rejected' | 'cancelled';
+          decided_by: string | null;
+          decided_at: string | null;
+        } & Timestamps;
+        Insert: {
+          organization_id: string;
+          learner_id: string;
+          item_name: string;
+          points_spent: number;
+          item_id?: string | null;
+          status?: string;
+        } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
       audit_logs: {
         Row: {
           id: string;
