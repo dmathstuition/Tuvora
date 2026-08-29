@@ -15,10 +15,16 @@ export function formatMoney(
   currency = 'USD',
   locale = 'en-US',
 ): string {
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
-  }).format(amountMinor / 100);
+  const amount = amountMinor / 100;
+  // A missing or invalid ISO-4217 code would make Intl throw a RangeError and
+  // crash whatever is rendering the price. Never let a bad currency take down
+  // the page — fall back to a plain, code-prefixed amount.
+  const code = (currency || 'USD').toUpperCase();
+  try {
+    return new Intl.NumberFormat(locale, { style: 'currency', currency: code }).format(amount);
+  } catch {
+    return `${code} ${amount.toFixed(2)}`;
+  }
 }
 
 /** Turn a display name into a URL-safe slug. */

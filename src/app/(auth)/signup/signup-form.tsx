@@ -61,8 +61,11 @@ export function SignupForm({
           {state.error}
         </p>
       )}
+      {state.message && (
+        <p className="rounded-md bg-success/10 px-3 py-2 text-sm text-success">{state.message}</p>
+      )}
 
-      <Button type="submit" className="w-full" disabled={pending}>
+      <Button type="submit" className="w-full" disabled={pending || !!state.message}>
         {pending ? 'Creating account…' : 'Create account'}
       </Button>
 

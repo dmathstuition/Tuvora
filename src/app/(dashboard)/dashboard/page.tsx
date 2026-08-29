@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { Users, GraduationCap, CalendarCheck, Wallet, TrendingUp } from 'lucide-react';
 import { getAuthContext } from '@/lib/auth/context';
 import { createClient } from '@/lib/supabase/server';
@@ -18,23 +19,46 @@ export const metadata: Metadata = { title: 'Dashboard' };
  */
 export default async function DashboardPage() {
   const ctx = await getAuthContext();
-  const organizationId = ctx!.organizationId!;
+  // Defensive: never dereference a null context. The layout normally redirects,
+  // but guard here too so a transient null session can't throw a hard render
+  // error (which would surface as a blank client-side exception on soft-nav).
+  if (!ctx?.organizationId) redirect('/onboarding');
+  const organizationId = ctx.organizationId;
   const supabase = await createClient();
 
-  const [billing, classesRes, todayAttendanceRes, trend] = await Promise.all([
-    getLearnerBillingSummary(organizationId),
-    supabase
-      .from('classes')
-      .select('id', { count: 'exact', head: true })
-      .eq('organization_id', organizationId)
-      .eq('status', 'active'),
-    supabase
-      .from('attendance')
-      .select('id', { count: 'exact', head: true })
-      .eq('organization_id', organizationId)
-      .eq('session_date', new Date().toISOString().slice(0, 10)),
-    getOrgPerformanceTrend(),
-  ]);
+  let billing, classesRes, todayAttendanceRes, trend;
+  try {
+    [billing, classesRes, todayAttendanceRes, trend] = await Promise.all([
+      getLearnerBillingSummary(organizationId),
+      supabase
+        .from('classes')
+        .select('id', { count: 'exact', head: true })
+        .eq('organization_id', organizationId)
+        .eq('status', 'active'),
+      supabase
+        .from('attendance')
+        .select('id', { count: 'exact', head: true })
+        .eq('organization_id', organizationId)
+        .eq('session_date', new Date().toISOString().slice(0, 10)),
+      getOrgPerformanceTrend(),
+    ]);
+  } catch (e) {
+    // TEMPORARY diagnostic: surface the real error text (a server-thrown error
+    // otherwise reaches the client only as a redacted digest). Remove once the
+    // dashboard load is confirmed healthy.
+    const msg = e instanceof Error ? `${e.message}\n\n${e.stack ?? ''}` : String(e);
+    return (
+      <div className="space-y-3">
+        <h1 className="text-xl font-bold">Dashboard failed to load</h1>
+        <p className="text-sm text-muted-foreground">
+          A data query threw while rendering the dashboard. Details below:
+        </p>
+        <pre className="overflow-auto rounded-md bg-destructive/10 p-4 text-xs text-destructive whitespace-pre-wrap">
+          {msg}
+        </pre>
+      </div>
+    );
+  }
 
   const openLearners = billing.open;
   const priceLabel = formatMoney(billing.price.amountMinor, billing.price.currency);

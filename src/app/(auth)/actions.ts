@@ -41,13 +41,25 @@ export async function signUpAction(
   });
   if (error) return { error: error.message };
 
-  // Link the learner record to this new user, then send them to their portal.
+  // Link the learner record to this new user (safe to do before confirmation).
   if (inviteToken && data.user) {
     const { consumePortalInvite } = await import('@/services/portal/invites');
     await consumePortalInvite(inviteToken, data.user.id);
-    redirect('/portal');
   }
 
+  // When email confirmation is enabled, signUp returns no session — the user
+  // must confirm via email before they have a session. Redirecting to a
+  // protected route here would just bounce them back to /login and look broken.
+  // Show a clear "check your email" message instead. When confirmation is off,
+  // a session exists and we can route straight into the app.
+  if (!data.session) {
+    return {
+      message:
+        'Account created. Check your email to confirm your address, then log in to continue.',
+    };
+  }
+
+  if (inviteToken) redirect('/portal');
   redirect('/onboarding');
 }
 
