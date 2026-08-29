@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, TrendingUp, FileBarChart, Sparkles } from 'lucide-react';
+import { ArrowLeft, TrendingUp, FileBarChart, Sparkles, ClipboardList } from 'lucide-react';
 import { getLearnerProfile } from '@/services/progress';
 import { getLearnerRewards } from '@/services/rewards';
 import { getPortalAccessStatus } from '@/services/portal/invites';
+import { getLearnerIntake } from '@/services/enrollment';
+import { getLearnerPlacements } from '@/services/placement';
 import { levelFromPoints } from '@/constants/gamification';
 import { can } from '@/lib/permissions';
 import { getAuthContext } from '@/lib/auth/context';
@@ -30,11 +32,13 @@ export default async function LearnerProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [profile, rewards, ctx, portalAccess] = await Promise.all([
+  const [profile, rewards, ctx, portalAccess, intake, placements] = await Promise.all([
     getLearnerProfile(id),
     getLearnerRewards(id),
     getAuthContext(),
     getPortalAccessStatus(id),
+    getLearnerIntake(id),
+    getLearnerPlacements(id),
   ]);
   if (!profile) notFound();
 
@@ -153,6 +157,118 @@ export default async function LearnerProfilePage({
               hasEmail={!!portalAccess.email}
               initialUrl={portalAccess.invite?.url ?? null}
             />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Enrolment details (parent-submitted intake) */}
+      {intake?.submittedAt && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ClipboardList className="h-4 w-4" /> Enrolment details
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5 text-sm">
+            <div className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
+              {(
+                [
+                  ['Parent / guardian', intake.parentName],
+                  ['Relationship', intake.relationship],
+                  ['Parent email', intake.parentEmail],
+                  ['Parent phone', intake.parentPhone],
+                  ['Current school', intake.currentSchool],
+                  ['Current grade', intake.currentGrade],
+                  ['Preferred mode', intake.preferredMode],
+                  [
+                    'Sessions / week',
+                    intake.sessionsPerWeek !== null ? String(intake.sessionsPerWeek) : null,
+                  ],
+                  ['Preferred days', intake.preferredDays.join(', ') || null],
+                  ['Preferred times', intake.preferredTimes],
+                  ['Emergency contact', intake.emergencyContactName],
+                  ['Emergency phone', intake.emergencyContactPhone],
+                  ['How they heard', intake.howHeard],
+                ] as const
+              )
+                .filter(([, v]) => !!v)
+                .map(([k, v]) => (
+                  <div key={k}>
+                    <dt className="text-xs text-muted-foreground">{k}</dt>
+                    <dd className="font-medium">{v}</dd>
+                  </div>
+                ))}
+            </div>
+
+            {intake.subjects.length > 0 && (
+              <div>
+                <p className="mb-1.5 text-xs text-muted-foreground">Subjects of interest</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {intake.subjects.map((s) => (
+                    <Badge key={s} variant="secondary">
+                      {s}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {(
+              [
+                ['Strengths', intake.strengths],
+                ['Areas to improve', intake.weaknesses],
+                ['Learning goals', intake.learningGoals],
+                ['Special needs', intake.specialNeeds],
+              ] as const
+            )
+              .filter(([, v]) => !!v)
+              .map(([k, v]) => (
+                <div key={k}>
+                  <p className="mb-0.5 text-xs text-muted-foreground">{k}</p>
+                  <p className="whitespace-pre-line">{v}</p>
+                </div>
+              ))}
+
+            <p className="text-xs text-muted-foreground">
+              Submitted {new Date(intake.submittedAt).toLocaleDateString()}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Placement / aptitude tests */}
+      {placements.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ClipboardList className="h-4 w-4" /> Placement tests
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            {placements.map((p) => (
+              <div
+                key={p.id}
+                className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0"
+              >
+                <div>
+                  <p className="font-medium">{p.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {p.subjectLabel ?? 'Placement'} ·{' '}
+                    {p.status === 'graded'
+                      ? `Completed${p.submittedAt ? ` ${new Date(p.submittedAt).toLocaleDateString()}` : ''}`
+                      : p.status === 'in_progress'
+                        ? 'In progress'
+                        : 'Assigned'}
+                  </p>
+                </div>
+                <div className="text-right">
+                  {p.percentage != null && <p className="font-semibold">{p.percentage}%</p>}
+                  {p.placementLevel && (
+                    <Badge variant="secondary">{p.placementLevel}</Badge>
+                  )}
+                </div>
+              </div>
+            ))}
           </CardContent>
         </Card>
       )}

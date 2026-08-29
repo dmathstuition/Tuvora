@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
-import { Sparkles, Trophy, BookOpen, Star } from 'lucide-react';
+import Link from 'next/link';
+import { Sparkles, Trophy, BookOpen, Star, ClipboardCheck } from 'lucide-react';
 import { getPortalData } from '@/services/portal';
+import { getMyPlacements } from '@/services/portal/placement';
 import { avatarFor, themeFor, levelFromPoints } from '@/constants/gamification';
 import { logoutAction } from '@/app/(auth)/actions';
 import { Button } from '@/components/ui/button';
@@ -17,6 +19,7 @@ const clayInset = 'rounded-full shadow-[inset_4px_4px_10px_rgba(99,102,241,0.20)
 
 export default async function PortalPage() {
   const data = await getPortalData();
+  const placements = data.linked ? await getMyPlacements() : [];
 
   if (!data.linked || !data.learner) {
     return (
@@ -139,6 +142,45 @@ export default async function PortalPage() {
             )}
           </div>
         </div>
+
+        {/* Placement / aptitude tests */}
+        {placements.length > 0 && (
+          <div className={cn('mt-5 p-5', clay)}>
+            <h3 className="flex items-center gap-2 font-extrabold text-slate-800">
+              <ClipboardCheck className="h-5 w-5 text-violet-500" /> Aptitude tests
+            </h3>
+            <ul className="mt-3 space-y-2">
+              {placements.map((p) => {
+                const done = p.status === 'graded';
+                return (
+                  <li key={p.attemptId}>
+                    <Link
+                      href={`/portal/placement/${p.attemptId}`}
+                      className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 shadow-[inset_2px_2px_6px_rgba(99,102,241,0.10),inset_-2px_-2px_6px_rgba(255,255,255,0.9)] transition hover:bg-indigo-50"
+                    >
+                      <span>
+                        <span className="block font-semibold text-slate-700">{p.title}</span>
+                        <span className="text-xs text-slate-400">
+                          {p.subjectLabel ? `${p.subjectLabel} · ` : ''}
+                          {p.questionCount} questions
+                        </span>
+                      </span>
+                      {done ? (
+                        <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-600">
+                          {p.percentage}% · {p.placementLevel}
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-violet-500 px-4 py-1.5 text-xs font-bold text-white">
+                          Start →
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
 
         {/* Classes */}
         <div className={cn('mt-5 p-5', clay)}>

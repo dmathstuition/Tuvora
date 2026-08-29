@@ -519,6 +519,76 @@ export interface Database {
         Update: Record<string, unknown>;
         Relationships: [];
       };
+      learner_intake: {
+        Row: {
+          id: string;
+          organization_id: string;
+          learner_id: string;
+          parent_name: string | null;
+          parent_email: string | null;
+          parent_phone: string | null;
+          relationship: string | null;
+          parent_occupation: string | null;
+          date_of_birth: string | null;
+          current_school: string | null;
+          current_grade: string | null;
+          subjects_of_interest: string[] | null;
+          strengths: string | null;
+          weaknesses: string | null;
+          learning_goals: string | null;
+          special_needs: string | null;
+          preferred_mode: string | null;
+          sessions_per_week: number | null;
+          preferred_days: string[] | null;
+          preferred_times: string | null;
+          emergency_contact_name: string | null;
+          emergency_contact_phone: string | null;
+          how_heard: string | null;
+          extra: Json;
+          submitted_at: string | null;
+        } & Timestamps;
+        Insert: { organization_id: string; learner_id: string } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      parents: {
+        Row: {
+          id: string;
+          organization_id: string;
+          user_id: string | null;
+          first_name: string;
+          last_name: string | null;
+          email: string | null;
+          phone: string | null;
+        } & Timestamps;
+        Insert: {
+          organization_id: string;
+          first_name: string;
+          last_name?: string | null;
+          email?: string | null;
+          phone?: string | null;
+        } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      parent_learners: {
+        Row: {
+          id: string;
+          organization_id: string;
+          parent_id: string;
+          learner_id: string;
+          relationship: string | null;
+          created_at: string;
+        };
+        Insert: {
+          organization_id: string;
+          parent_id: string;
+          learner_id: string;
+          relationship?: string | null;
+        };
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
       support_tickets: {
         Row: {
           id: string;
@@ -642,9 +712,39 @@ export interface Database {
           total_marks: number | null;
           pass_mark: number | null;
           status: 'draft' | 'published' | 'archived';
+          is_placement: boolean;
+          subject_label: string | null;
+          grade_band: string | null;
           created_by: string | null;
         } & Timestamps;
         Insert: { organization_id: string; title: string } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      assessment_attempts: {
+        Row: {
+          id: string;
+          organization_id: string;
+          assessment_id: string;
+          learner_id: string;
+          status: 'assigned' | 'in_progress' | 'submitted' | 'graded';
+          answers: Json;
+          score: number | null;
+          total: number | null;
+          percentage: number | null;
+          placement_level: string | null;
+          placement_notes: string | null;
+          assigned_by: string | null;
+          assigned_at: string;
+          started_at: string | null;
+          submitted_at: string | null;
+        } & Timestamps;
+        Insert: {
+          organization_id: string;
+          assessment_id: string;
+          learner_id: string;
+          assigned_by?: string | null;
+        } & Record<string, unknown>;
         Update: Record<string, unknown>;
         Relationships: [];
       };

@@ -15,7 +15,9 @@ export interface PortalAccessStatus {
 }
 
 async function inviteUrl(token: string): Promise<string> {
-  return `${await getRequestBaseUrl()}/signup?invite=${token}`;
+  // The invite lands on the public enrolment page: the parent completes the
+  // intake form first, then proceeds to create the learner's portal account.
+  return `${await getRequestBaseUrl()}/enroll/${token}`;
 }
 
 /** Portal-access status for a learner: linked, invited (with link), or neither. */

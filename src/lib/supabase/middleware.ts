@@ -71,7 +71,12 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    if (user && isAuthRoute) {
+    // Don't bounce a signed-in user away from an auth route that carries an
+    // invite/redirect — the person opening an invite may already have a session
+    // (e.g. a tutor testing their own link, or a parent on a shared device).
+    const carriesInvite =
+      request.nextUrl.searchParams.has('invite') || request.nextUrl.searchParams.has('redirect');
+    if (user && isAuthRoute && !carriesInvite) {
       const url = request.nextUrl.clone();
       url.pathname = '/dashboard';
       return NextResponse.redirect(url);

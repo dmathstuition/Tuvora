@@ -1,13 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Check } from 'lucide-react';
+import { ArrowLeft, Check, ClipboardCheck } from 'lucide-react';
 import { getAssessmentDetail, publishAssessmentAction } from '@/services/assessments';
+import { listAssessmentAttempts } from '@/services/placement';
+import { listLearners } from '@/services/learners';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { AddQuestion } from './add-question';
+import { PlacementPanel } from './placement-panel';
 
 export const metadata: Metadata = { title: 'Assessment' };
 
@@ -16,6 +19,15 @@ export default async function AssessmentDetailPage({ params }: { params: Promise
   const detail = await getAssessmentDetail(id);
   if (!detail) notFound();
   const { assessment, questions, canManage } = detail;
+
+  const [attempts, learnerList] = await Promise.all([
+    listAssessmentAttempts(id),
+    canManage ? listLearners(1, 100) : Promise.resolve({ learners: [], total: 0 }),
+  ]);
+  const learners = learnerList.learners.map((l) => ({
+    id: l.id,
+    name: `${l.first_name} ${l.last_name ?? ''}`.trim(),
+  }));
 
   return (
     <div className="space-y-6">
@@ -35,8 +47,9 @@ export default async function AssessmentDetailPage({ params }: { params: Promise
             </p>
           </div>
           {canManage && (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <AddQuestion assessmentId={assessment.id} />
+              <PlacementPanel assessmentId={assessment.id} learners={learners} />
               {assessment.status !== 'published' && questions.length > 0 && (
                 <form action={publishAssessmentAction}>
                   <input type="hidden" name="assessmentId" value={assessment.id} />
@@ -81,6 +94,56 @@ export default async function AssessmentDetailPage({ params }: { params: Promise
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Placement results */}
+      {attempts.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ClipboardCheck className="h-4 w-4" /> Placement results
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-xs text-muted-foreground">
+                  <th className="px-4 py-2 font-medium">Learner</th>
+                  <th className="px-4 py-2 font-medium">Status</th>
+                  <th className="px-4 py-2 font-medium">Score</th>
+                  <th className="px-4 py-2 font-medium">Placement</th>
+                </tr>
+              </thead>
+              <tbody>
+                {attempts.map((a) => (
+                  <tr key={a.id} className="border-b last:border-0">
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/dashboard/learners/${a.learnerId}`}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        {a.learnerName}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge variant={a.status === 'graded' ? 'success' : 'secondary'}>
+                        {a.status === 'graded'
+                          ? 'Completed'
+                          : a.status === 'in_progress'
+                            ? 'In progress'
+                            : 'Assigned'}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {a.percentage != null ? `${a.percentage}%` : '—'}
+                    </td>
+                    <td className="px-4 py-3 font-medium">{a.placementLevel ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
