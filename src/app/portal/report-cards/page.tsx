@@ -1,0 +1,115 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
+import { getMyReportCard } from '@/services/portal/extras';
+import { LogoMark } from '@/components/brand/logo';
+import { PrintButton } from '@/components/portal/print-button';
+
+export const metadata: Metadata = { title: 'Report card' };
+
+function pct(v: number | null): string {
+  return v == null ? '—' : `${v}%`;
+}
+
+export default async function PortalReportCard() {
+  const r = await getMyReportCard();
+  if (!r) redirect('/portal');
+  const attTotal = r.attendance.present + r.attendance.late + r.attendance.absent + r.attendance.excused;
+
+  return (
+    <div className="min-h-screen bg-[#f6f7fb] px-4 py-6 print:bg-white print:p-0">
+      <div className="mx-auto max-w-2xl">
+        <div className="mb-4 flex items-center justify-between print:hidden">
+          <Link href="/portal" className="inline-flex items-center gap-1 text-sm font-bold text-brand-600">
+            <ArrowLeft className="h-4 w-4" /> Portal
+          </Link>
+          <PrintButton />
+        </div>
+
+        <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm print:border-0 print:shadow-none">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b pb-4">
+            <div className="flex items-center gap-2">
+              <LogoMark className="h-9 w-9" />
+              <div>
+                <p className="text-sm font-bold uppercase tracking-widest text-brand-900">{r.orgName}</p>
+                <p className="text-xs text-slate-400">Report card</p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-400">{new Date(r.generatedAt).toLocaleDateString()}</p>
+          </div>
+
+          {/* Learner */}
+          <div className="mt-4">
+            <h1 className="text-2xl font-extrabold text-brand-900">{r.learnerName}</h1>
+            {r.grade && <p className="text-sm text-slate-500">{r.grade}</p>}
+          </div>
+
+          {/* Headline stats */}
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              ['Average score', pct(r.avgScore)],
+              ['Attendance', pct(r.attendancePct)],
+              ['Assignments', `${r.assignmentsDone}/${r.assignmentsTotal}`],
+              ['Points', String(r.points)],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-2xl bg-slate-50 p-4 text-center print:border">
+                <p className="text-2xl font-extrabold text-brand-900">{value}</p>
+                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">{label}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-2">
+            <span className="rounded-full bg-brand-50 px-3 py-1 text-sm font-bold text-brand-700">Level {r.level}</span>
+            <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-bold text-amber-700">{r.tier} tier</span>
+          </div>
+
+          {/* Attendance breakdown */}
+          <div className="mt-6">
+            <h2 className="mb-2 text-sm font-extrabold uppercase tracking-wide text-slate-500">Attendance</h2>
+            {attTotal === 0 ? (
+              <p className="text-sm text-slate-400">No attendance recorded yet.</p>
+            ) : (
+              <div className="grid grid-cols-4 gap-2 text-center text-sm">
+                {([['Present', r.attendance.present], ['Late', r.attendance.late], ['Absent', r.attendance.absent], ['Excused', r.attendance.excused]] as const).map(([k, v]) => (
+                  <div key={k} className="rounded-xl bg-slate-50 py-2 print:border">
+                    <p className="font-bold text-brand-900">{v}</p>
+                    <p className="text-xs text-slate-400">{k}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Recent grades */}
+          <div className="mt-6">
+            <h2 className="mb-2 text-sm font-extrabold uppercase tracking-wide text-slate-500">Recent grades</h2>
+            {r.recentGrades.length === 0 ? (
+              <p className="text-sm text-slate-400">No graded work yet.</p>
+            ) : (
+              <table className="w-full text-sm">
+                <tbody>
+                  {r.recentGrades.map((g, i) => (
+                    <tr key={i} className="border-b last:border-0">
+                      <td className="py-2 font-medium text-slate-700">{g.assignment}</td>
+                      <td className="py-2 text-right text-slate-500">
+                        {g.score}
+                        {g.max ? ` / ${g.max}` : ''}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          <p className="mt-8 border-t pt-4 text-center text-xs text-slate-400">
+            Generated by Tuvora · {r.orgName}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

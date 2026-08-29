@@ -52,7 +52,7 @@ export function PortalShell({
           )}
           <div className="flex items-center gap-2">
             <Link
-              href="/portal/more"
+              href="/portal/notifications"
               aria-label="Notifications"
               className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200"
             >
