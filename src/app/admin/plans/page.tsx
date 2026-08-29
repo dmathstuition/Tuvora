@@ -1,15 +1,17 @@
 import type { Metadata } from 'next';
 import { Package } from 'lucide-react';
-import { listPlans } from '@/services/admin';
+import { listPlans, viewerIsSuperAdmin } from '@/services/admin';
+import { deletePlanAction } from '@/services/admin/actions';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
+import { ConfirmButton } from '@/components/ui/confirm-button';
 import { formatMoney } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Admin · Plans' };
 
 export default async function AdminPlansPage() {
-  const plans = await listPlans();
+  const [plans, canWrite] = await Promise.all([listPlans(), viewerIsSuperAdmin()]);
 
   return (
     <div className="space-y-6">
@@ -53,6 +55,24 @@ export default async function AdminPlansPage() {
                     <dd className="font-mono text-xs">{p.slug}</dd>
                   </div>
                 </dl>
+                {canWrite && (
+                  <div className="mt-4 flex justify-end border-t pt-3">
+                    {p.subscribers > 0 ? (
+                      <span className="text-xs text-muted-foreground">
+                        {p.subscribers} active subscriber{p.subscribers === 1 ? '' : 's'} — cannot delete
+                      </span>
+                    ) : (
+                      <form action={deletePlanAction}>
+                        <input type="hidden" name="id" value={p.id} />
+                        <ConfirmButton
+                          variant="outline"
+                          label="Delete plan"
+                          message={`Delete plan "${p.name}"? This cannot be undone.`}
+                        />
+                      </form>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}

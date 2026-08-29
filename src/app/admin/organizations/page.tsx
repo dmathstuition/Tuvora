@@ -1,15 +1,22 @@
 import type { Metadata } from 'next';
 import { Building2 } from 'lucide-react';
-import { listOrganizations } from '@/services/admin';
+import { listOrganizations, viewerIsSuperAdmin } from '@/services/admin';
+import {
+  archiveOrganizationAction,
+  restoreOrganizationAction,
+  deleteOrganizationAction,
+} from '@/services/admin/actions';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
+import { ConfirmButton } from '@/components/ui/confirm-button';
 import { initials } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Admin · Organizations' };
 
 export default async function AdminOrganizationsPage() {
-  const orgs = await listOrganizations();
+  const [orgs, canWrite] = await Promise.all([listOrganizations(), viewerIsSuperAdmin()]);
 
   return (
     <div className="space-y-6">
@@ -35,6 +42,7 @@ export default async function AdminOrganizationsPage() {
                   <th className="px-4 py-3 font-medium">Currency</th>
                   <th className="px-4 py-3 font-medium">Joined</th>
                   <th className="px-4 py-3 font-medium">Status</th>
+                  {canWrite && <th className="px-4 py-3" />}
                 </tr>
               </thead>
               <tbody>
@@ -62,6 +70,35 @@ export default async function AdminOrganizationsPage() {
                         {o.archived ? 'Archived' : 'Active'}
                       </Badge>
                     </td>
+                    {canWrite && (
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-2">
+                          {o.archived ? (
+                            <form action={restoreOrganizationAction}>
+                              <input type="hidden" name="id" value={o.id} />
+                              <Button type="submit" variant="outline" size="sm">
+                                Restore
+                              </Button>
+                            </form>
+                          ) : (
+                            <form action={archiveOrganizationAction}>
+                              <input type="hidden" name="id" value={o.id} />
+                              <Button type="submit" variant="outline" size="sm">
+                                Archive
+                              </Button>
+                            </form>
+                          )}
+                          <form action={deleteOrganizationAction}>
+                            <input type="hidden" name="id" value={o.id} />
+                            <ConfirmButton
+                              variant="outline"
+                              label="Delete"
+                              message={`Permanently delete "${o.name}" and ALL its data (learners, classes, billing…)? This cannot be undone.`}
+                            />
+                          </form>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
