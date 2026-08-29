@@ -4,6 +4,7 @@ import { getAuthContext, getProfile } from '@/lib/auth/context';
 import { isPlatformStaff } from '@/lib/permissions';
 import { logoutAction } from '@/app/(auth)/actions';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
+import { AdminMobileNav } from '@/components/admin/admin-mobile-nav';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { initials } from '@/lib/utils';
@@ -25,6 +26,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <AdminSidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-16 items-center justify-between gap-4 border-b bg-background px-4 lg:px-8">
+          <AdminMobileNav />
           <div className="relative hidden max-w-md flex-1 md:block">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input

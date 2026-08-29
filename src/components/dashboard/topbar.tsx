@@ -3,19 +3,24 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { initials } from '@/lib/utils';
 import { LogOut } from 'lucide-react';
+import { DashboardMobileNav } from '@/components/dashboard/mobile-nav';
+import type { Permission } from '@/constants/roles';
 
 export function Topbar({
   orgName,
   userName,
   planLabel,
+  permissions,
 }: {
   orgName: string;
   userName: string | null;
   planLabel?: string;
+  permissions: Permission[];
 }) {
   return (
     <header className="flex h-16 items-center justify-between border-b bg-background px-4 lg:px-8">
       <div className="flex items-center gap-3">
+        <DashboardMobileNav permissions={permissions} />
         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-900 text-sm font-semibold text-white">
           {initials(orgName)}
         </div>
