@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { GraduationCap } from 'lucide-react';
+import { redirect } from 'next/navigation';
 import { getAuthContext } from '@/lib/auth/context';
 import { listClasses, getRemainingClassCapacity } from '@/services/classes';
 import { can } from '@/lib/permissions';
@@ -20,8 +21,9 @@ const statusVariant: Record<string, 'success' | 'secondary' | 'outline' | 'warni
 
 export default async function ClassesPage() {
   const ctx = await getAuthContext();
-  const organizationId = ctx!.organizationId!;
-  const canManage = can(ctx!, 'classes.manage');
+  if (!ctx?.organizationId) redirect('/onboarding');
+  const organizationId = ctx.organizationId;
+  const canManage = can(ctx, 'classes.manage');
 
   const [{ classes, total }, remaining] = await Promise.all([
     listClasses(),

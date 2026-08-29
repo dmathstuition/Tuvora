@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { FileText } from 'lucide-react';
+import { redirect } from 'next/navigation';
 import { getAuthContext } from '@/lib/auth/context';
 import { listAssignments, getClassOptions } from '@/services/assignments';
 import { getEntitlements } from '@/lib/entitlements/service';
@@ -21,8 +22,9 @@ const statusVariant: Record<string, 'success' | 'warning' | 'outline'> = {
 
 export default async function AssignmentsPage() {
   const ctx = await getAuthContext();
-  const organizationId = ctx!.organizationId!;
-  const canManage = can(ctx!, 'assignments.manage');
+  if (!ctx?.organizationId) redirect('/onboarding');
+  const organizationId = ctx.organizationId;
+  const canManage = can(ctx, 'assignments.manage');
 
   const [assignments, classes, entitlements] = await Promise.all([
     listAssignments(),

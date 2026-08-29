@@ -19,6 +19,14 @@ export interface PortalData {
   rank?: number | null;
   classes?: { id: string; name: string }[];
   recent?: { id: string; points: number; reason: string | null; date: string }[];
+  leaderboard?: {
+    rank: number;
+    id: string;
+    name: string;
+    avatarKey: string;
+    points: number;
+    isMe: boolean;
+  }[];
 }
 
 /**
@@ -93,6 +101,28 @@ export async function getPortalData(): Promise<PortalData> {
     for (const c of cls ?? []) classes.push({ id: c.id, name: c.name });
   }
 
+  // Academy leaderboard — the top point-earners, with the current learner flagged.
+  const topIds = ranked.slice(0, 5).map(([id]) => id);
+  const leaderboard: NonNullable<PortalData['leaderboard']> = [];
+  if (topIds.length > 0) {
+    const { data: tops } = await admin
+      .from('learners')
+      .select('id, first_name, last_name, avatar_key')
+      .in('id', topIds);
+    const byId = new Map((tops ?? []).map((l) => [l.id, l]));
+    topIds.forEach((id, i) => {
+      const l = byId.get(id);
+      leaderboard.push({
+        rank: i + 1,
+        id,
+        name: l ? `${l.first_name} ${l.last_name ?? ''}`.trim() : 'Learner',
+        avatarKey: l?.avatar_key ?? DEFAULT_AVATAR,
+        points: totals.get(id) ?? 0,
+        isMe: id === learner.id,
+      });
+    });
+  }
+
   const prefs = (org?.portal_preferences ?? {}) as { displayName?: string; welcome?: string };
 
   return {
@@ -114,6 +144,7 @@ export async function getPortalData(): Promise<PortalData> {
       reason: r.reason,
       date: r.created_at,
     })),
+    leaderboard,
   };
 }
 

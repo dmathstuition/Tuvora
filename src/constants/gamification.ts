@@ -54,6 +54,46 @@ export const THEMES = [
 
 export const DEFAULT_THEME = 'indigo';
 
+/** Fun achievement badges, earned from points / level / rank. Presentation only. */
+export const BADGES = [
+  { key: 'first_points', emoji: '✨', label: 'First Sparks', hint: 'Earn your first points' },
+  { key: 'fifty', emoji: '🎮', label: 'Game On', hint: 'Reach 50 points' },
+  { key: 'century', emoji: '💯', label: 'Century', hint: 'Reach 100 points' },
+  { key: 'level5', emoji: '🏅', label: 'High Five', hint: 'Reach level 5' },
+  { key: 'podium', emoji: '🏆', label: 'On the Podium', hint: 'Reach the top 3' },
+  { key: 'champion', emoji: '👑', label: 'Champion', hint: 'Be #1 in your academy' },
+] as const;
+
+export type Badge = (typeof BADGES)[number] & { earned: boolean };
+
+/** Which badges a learner has earned, plus the still-locked ones (for display). */
+export function badgesFor(points: number, level: number, rank: number | null): Badge[] {
+  return BADGES.map((b) => {
+    let earned = false;
+    switch (b.key) {
+      case 'first_points':
+        earned = points >= 1;
+        break;
+      case 'fifty':
+        earned = points >= 50;
+        break;
+      case 'century':
+        earned = points >= 100;
+        break;
+      case 'level5':
+        earned = level >= 5;
+        break;
+      case 'podium':
+        earned = rank != null && rank <= 3;
+        break;
+      case 'champion':
+        earned = rank === 1;
+        break;
+    }
+    return { ...b, earned };
+  });
+}
+
 export function avatarFor(key: string | null | undefined): (typeof AVATARS)[number] {
   return AVATARS.find((a) => a.key === key) ?? AVATARS.find((a) => a.key === DEFAULT_AVATAR)!;
 }

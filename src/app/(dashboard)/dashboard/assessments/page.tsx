@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ClipboardList } from 'lucide-react';
+import { redirect } from 'next/navigation';
 import { getAuthContext } from '@/lib/auth/context';
 import { can } from '@/lib/permissions';
 import { getEntitlements } from '@/lib/entitlements/service';
@@ -37,8 +38,9 @@ const statusVariant: Record<string, 'success' | 'warning' | 'outline'> = {
 
 export default async function AssessmentsPage() {
   const ctx = await getAuthContext();
-  const organizationId = ctx!.organizationId!;
-  const canManage = can(ctx!, 'assessments.manage');
+  if (!ctx?.organizationId) redirect('/onboarding');
+  const organizationId = ctx.organizationId;
+  const canManage = can(ctx, 'assessments.manage');
   const [assessments, entitlements] = await Promise.all([listAssessments(), getEntitlements(organizationId)]);
   const enabled = hasFeature(entitlements, 'assessments');
 

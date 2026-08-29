@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { Users } from 'lucide-react';
 import { getAuthContext } from '@/lib/auth/context';
 import { listLearners, type LearnerBillingBadge } from '@/services/learners';
@@ -22,9 +23,10 @@ const billingLabel: Record<LearnerBillingBadge, { text: string; variant: 'succes
 
 export default async function LearnersPage() {
   const ctx = await getAuthContext();
-  const organizationId = ctx!.organizationId!;
-  const canCreate = can(ctx!, 'learners.create');
-  const canBill = can(ctx!, 'billing.manage');
+  if (!ctx?.organizationId) redirect('/onboarding');
+  const organizationId = ctx.organizationId;
+  const canCreate = can(ctx, 'learners.create');
+  const canBill = can(ctx, 'billing.manage');
 
   const [{ learners, total }, summary] = await Promise.all([
     listLearners(),
