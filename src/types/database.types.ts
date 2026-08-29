@@ -509,6 +509,8 @@ export interface Database {
           currency: string;
           subtotal_minor: number;
           total_minor: number;
+          bill_to_learner_id: string | null;
+          bill_to_parent_id: string | null;
           due_at: string | null;
           issued_at: string | null;
           paid_at: string | null;
@@ -558,6 +560,164 @@ export interface Database {
           current_period_start?: string | null;
           current_period_end?: string | null;
         } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      subjects: {
+        Row: { id: string; organization_id: string; name: string; color: string | null; created_at: string };
+        Insert: { organization_id: string; name: string; color?: string | null };
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      courses: {
+        Row: {
+          id: string;
+          organization_id: string;
+          subject_id: string | null;
+          title: string;
+          description: string | null;
+          level: string | null;
+          cover_image_url: string | null;
+          status: 'draft' | 'published' | 'archived';
+          created_by: string | null;
+        } & Timestamps;
+        Insert: { organization_id: string; title: string } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      course_modules: {
+        Row: { id: string; organization_id: string; course_id: string; title: string; position: number; created_at: string };
+        Insert: { organization_id: string; course_id: string; title: string; position?: number };
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      lessons: {
+        Row: {
+          id: string;
+          organization_id: string;
+          module_id: string | null;
+          class_id: string | null;
+          title: string;
+          description: string | null;
+          content: Json | null;
+          video_url: string | null;
+          objectives: string[] | null;
+          position: number;
+        } & Timestamps;
+        Insert: { organization_id: string; title: string } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      resources: {
+        Row: {
+          id: string;
+          organization_id: string;
+          title: string;
+          description: string | null;
+          kind: string;
+          url: string | null;
+          file_id: string | null;
+          class_id: string | null;
+          course_id: string | null;
+          lesson_id: string | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: { organization_id: string; title: string; kind?: string } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      assessments: {
+        Row: {
+          id: string;
+          organization_id: string;
+          class_id: string | null;
+          subject_id: string | null;
+          title: string;
+          description: string | null;
+          type: 'quiz' | 'test' | 'exam' | 'diagnostic';
+          time_limit_minutes: number | null;
+          attempt_limit: number | null;
+          randomize: boolean;
+          total_marks: number | null;
+          pass_mark: number | null;
+          status: 'draft' | 'published' | 'archived';
+          created_by: string | null;
+        } & Timestamps;
+        Insert: { organization_id: string; title: string } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      assessment_questions: {
+        Row: {
+          id: string;
+          organization_id: string;
+          assessment_id: string;
+          type: 'multiple_choice' | 'true_false' | 'short_answer';
+          prompt: string;
+          marks: number;
+          position: number;
+          answer_key: Json | null;
+          created_at: string;
+        };
+        Insert: { organization_id: string; assessment_id: string; type: 'multiple_choice' | 'true_false' | 'short_answer'; prompt: string } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      assessment_options: {
+        Row: { id: string; organization_id: string; question_id: string; label: string; is_correct: boolean; position: number };
+        Insert: { organization_id: string; question_id: string; label: string; is_correct?: boolean; position?: number };
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      message_threads: {
+        Row: {
+          id: string;
+          organization_id: string;
+          subject: string | null;
+          kind: string;
+          class_id: string | null;
+          created_by: string | null;
+          participant_ids: string[];
+        } & Timestamps;
+        Insert: { organization_id: string; subject?: string | null; kind?: string; created_by?: string | null } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      messages: {
+        Row: {
+          id: string;
+          organization_id: string;
+          thread_id: string;
+          sender_id: string | null;
+          body: string;
+          read_by: string[];
+          created_at: string;
+        };
+        Insert: { organization_id: string; thread_id: string; body: string; sender_id?: string | null };
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      calendar_events: {
+        Row: {
+          id: string;
+          organization_id: string;
+          title: string;
+          kind: string;
+          class_id: string | null;
+          starts_at: string;
+          ends_at: string | null;
+          all_day: boolean;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: { organization_id: string; title: string; starts_at: string; kind?: string } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      invoice_items: {
+        Row: { id: string; invoice_id: string; description: string; quantity: number; unit_price_minor: number; amount_minor: number; created_at: string };
+        Insert: { invoice_id: string; description: string; quantity?: number; unit_price_minor?: number; amount_minor?: number };
         Update: Record<string, unknown>;
         Relationships: [];
       };
