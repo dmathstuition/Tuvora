@@ -47,22 +47,60 @@ export async function getMyPlacements(): Promise<MyPlacement[]> {
 
   const ids = rows.map((r) => r.assessment_id);
   const [{ data: assessments }, { data: questions }] = await Promise.all([
-    admin.from('assessments').select('id, title, subject_label').in('id', ids),
+    admin.from('assessments').select('id, title, subject_label, is_placement').in('id', ids),
     admin.from('assessment_questions').select('assessment_id').in('assessment_id', ids),
   ]);
   const byId = new Map((assessments ?? []).map((a) => [a.id, a]));
   const qCount = new Map<string, number>();
   for (const q of questions ?? []) qCount.set(q.assessment_id, (qCount.get(q.assessment_id) ?? 0) + 1);
 
-  return rows.map((r) => ({
-    attemptId: r.id,
-    title: byId.get(r.assessment_id)?.title ?? 'Placement test',
-    subjectLabel: byId.get(r.assessment_id)?.subject_label ?? null,
-    status: r.status,
-    percentage: r.percentage,
-    placementLevel: r.placement_level,
-    questionCount: qCount.get(r.assessment_id) ?? 0,
-  }));
+  return rows
+    .filter((r) => byId.get(r.assessment_id)?.is_placement !== false)
+    .map((r) => ({
+      attemptId: r.id,
+      title: byId.get(r.assessment_id)?.title ?? 'Placement test',
+      subjectLabel: byId.get(r.assessment_id)?.subject_label ?? null,
+      status: r.status,
+      percentage: r.percentage,
+      placementLevel: r.placement_level,
+      questionCount: qCount.get(r.assessment_id) ?? 0,
+    }));
+}
+
+/** The learner's assigned mock exams / tests (non-placement assessments). */
+export async function getMyExams(): Promise<MyPlacement[]> {
+  const resolved = await resolveLearnerId();
+  if (!resolved) return [];
+  const admin = createAdminClient();
+
+  const { data: attempts } = await admin
+    .from('assessment_attempts')
+    .select('id, assessment_id, status, percentage')
+    .eq('learner_id', resolved.learnerId)
+    .order('assigned_at', { ascending: false });
+  const rows = attempts ?? [];
+  if (rows.length === 0) return [];
+
+  const ids = rows.map((r) => r.assessment_id);
+  const [{ data: assessments }, { data: questions }] = await Promise.all([
+    admin.from('assessments').select('id, title, subject_label, is_placement').in('id', ids),
+    admin.from('assessment_questions').select('assessment_id').in('assessment_id', ids),
+  ]);
+  const byId = new Map((assessments ?? []).map((a) => [a.id, a]));
+  const qCount = new Map<string, number>();
+  for (const q of questions ?? []) qCount.set(q.assessment_id, (qCount.get(q.assessment_id) ?? 0) + 1);
+
+  return rows
+    .filter((r) => byId.get(r.assessment_id)?.is_placement === false)
+    .map((r) => ({
+      attemptId: r.id,
+      title: byId.get(r.assessment_id)?.title ?? 'Exam',
+      subjectLabel: byId.get(r.assessment_id)?.subject_label ?? null,
+      status: r.status,
+      percentage: r.percentage,
+      placementLevel: null,
+      questionCount: qCount.get(r.assessment_id) ?? 0,
+    }));
 }
 
 export interface PlacementQuestion {

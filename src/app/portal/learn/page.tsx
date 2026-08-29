@@ -5,6 +5,7 @@ import { getPortalData } from '@/services/portal';
 import { avatarFor, themeFor } from '@/constants/gamification';
 import { PortalShell } from '@/components/portal/portal-shell';
 import { FeatureGrid } from '@/components/portal/feature-grid';
+import { JoinCodeEntry } from '@/components/portal/join-class';
 import { QuickMaths } from '../quick-maths';
 
 export const metadata: Metadata = { title: 'Learn' };
@@ -25,6 +26,8 @@ export default async function PortalLearn() {
         </div>
 
         <QuickMaths />
+
+        <JoinCodeEntry />
 
         <section>
           <h2 className="mb-3 flex items-center gap-2 text-lg font-extrabold text-slate-800">

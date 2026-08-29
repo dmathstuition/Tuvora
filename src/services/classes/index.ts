@@ -123,6 +123,8 @@ export async function createClassAction(
     };
   }
 
+  const joinCode = Math.random().toString(36).slice(2, 10).toUpperCase();
+
   const supabase = await createClient();
   const { error } = await supabase.from('classes').insert({
     organization_id: ctx.organizationId,
@@ -132,6 +134,7 @@ export async function createClassAction(
     capacity: parsed.data.capacity ?? null,
     start_date: parsed.data.startDate || null,
     status: parsed.data.status,
+    join_code: joinCode,
   });
 
   if (error) return { error: 'Could not create the class. Please try again.' };
@@ -165,6 +168,7 @@ export interface ClassDetail {
     ClassRow,
     'id' | 'name' | 'description' | 'mode' | 'status' | 'capacity' | 'start_date' | 'end_date'
   >;
+  joinCode: string | null;
   enrolled: EnrolledLearner[];
   enrollable: { id: string; name: string }[];
   canManage: boolean;
@@ -179,7 +183,7 @@ export async function getClassDetail(id: string): Promise<ClassDetail | null> {
 
   const { data: klass } = await supabase
     .from('classes')
-    .select('id, name, description, mode, status, capacity, start_date, end_date')
+    .select('id, name, description, mode, status, capacity, start_date, end_date, join_code')
     .eq('id', id)
     .eq('organization_id', ctx.organizationId)
     .maybeSingle();
@@ -234,7 +238,14 @@ export async function getClassDetail(id: string): Promise<ClassDetail | null> {
 
   const atCapacity = klass.capacity != null && enrolled.length >= klass.capacity;
 
-  return { klass, enrolled, enrollable, canManage: can(ctx, 'classes.manage'), atCapacity };
+  return {
+    klass,
+    joinCode: klass.join_code,
+    enrolled,
+    enrollable,
+    canManage: can(ctx, 'classes.manage'),
+    atCapacity,
+  };
 }
 
 export type EnrolState = { error?: string; success?: boolean };

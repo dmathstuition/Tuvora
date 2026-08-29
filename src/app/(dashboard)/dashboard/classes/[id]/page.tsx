@@ -3,11 +3,13 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Users } from 'lucide-react';
 import { getClassDetail } from '@/services/classes';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { getRequestBaseUrl } from '@/lib/base-url';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { EnrolLearner } from './enrol-learner';
 import { UnenrolButton } from './unenrol-button';
+import { JoinLink } from './join-link';
 
 export const metadata: Metadata = { title: 'Class' };
 
@@ -23,10 +25,11 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ id
   const detail = await getClassDetail(id);
   if (!detail) notFound();
 
-  const { klass, enrolled, enrollable, canManage, atCapacity } = detail;
+  const { klass, joinCode, enrolled, enrollable, canManage, atCapacity } = detail;
   const capacityLabel = klass.capacity
     ? `${enrolled.length} / ${klass.capacity} enrolled`
     : `${enrolled.length} enrolled`;
+  const joinUrl = joinCode ? `${await getRequestBaseUrl()}/portal/join/${joinCode}` : null;
 
   return (
     <div className="space-y-6">
@@ -49,6 +52,21 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ id
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{klass.description}</p>
         )}
       </div>
+
+      {canManage && joinCode && joinUrl && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Class join link</CardTitle>
+            <CardDescription>
+              Share this when scheduling the class — learners open it (or enter the code in their
+              app) to join themselves.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <JoinLink code={joinCode} url={joinUrl} />
+          </CardContent>
+        </Card>
+      )}
 
       {canManage && (
         <Card>

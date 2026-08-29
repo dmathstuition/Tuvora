@@ -369,6 +369,7 @@ export interface Database {
           capacity: number | null;
           start_date: string | null;
           end_date: string | null;
+          join_code: string | null;
         } & Timestamps;
         Insert: {
           organization_id: string;
@@ -380,6 +381,7 @@ export interface Database {
           capacity?: number | null;
           start_date?: string | null;
           end_date?: string | null;
+          join_code?: string | null;
         } & Record<string, unknown>;
         Update: Record<string, unknown>;
         Relationships: [];
@@ -828,6 +830,43 @@ export interface Database {
         Row: { key: string; value: Json; updated_at: string };
         Insert: { key: string; value?: Json; updated_at?: string };
         Update: { value?: Json; updated_at?: string };
+        Relationships: [];
+      };
+      revision_decks: {
+        Row: {
+          id: string;
+          organization_id: string;
+          title: string;
+          subject: string | null;
+          created_by: string | null;
+        } & Timestamps;
+        Insert: {
+          organization_id: string;
+          title: string;
+          subject?: string | null;
+          created_by?: string | null;
+        } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      revision_cards: {
+        Row: {
+          id: string;
+          organization_id: string;
+          deck_id: string;
+          front: string;
+          back: string;
+          position: number;
+          created_at: string;
+        };
+        Insert: {
+          organization_id: string;
+          deck_id: string;
+          front: string;
+          back: string;
+          position?: number;
+        } & Record<string, unknown>;
+        Update: Record<string, unknown>;
         Relationships: [];
       };
       certificates: {

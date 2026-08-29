@@ -61,7 +61,7 @@ export const LEARNER_FEATURES: LearnerFeature[] = [
   { key: 'assignments', label: 'Assignments', group: 'Learn', href: '/portal/learn', status: 'soon', icon: PencilLine, accent: 'from-amber-500 to-orange-600' },
   { key: 'materials', label: 'Materials', group: 'Learn', href: '/portal/learn', status: 'soon', icon: FileText, accent: 'from-indigo-500 to-violet-600' },
   { key: 'curriculum', label: 'Curriculum', group: 'Learn', href: '/portal/learn', status: 'soon', icon: BookOpen, accent: 'from-teal-500 to-emerald-600' },
-  { key: 'mock_exam', label: 'Mock exam', group: 'Learn', href: '/portal/learn', status: 'soon', icon: GraduationCap, accent: 'from-rose-500 to-pink-600' },
+  { key: 'mock_exam', label: 'Mock exam', group: 'Learn', href: '/portal/exams', status: 'live', icon: GraduationCap, accent: 'from-rose-500 to-pink-600' },
   { key: 'my_plan', label: 'My plan', group: 'Learn', href: '/portal/learn', status: 'soon', icon: CalendarCheck, accent: 'from-cyan-500 to-sky-600' },
 
   // Play
@@ -70,7 +70,7 @@ export const LEARNER_FEATURES: LearnerFeature[] = [
   { key: 'mathle', label: 'Mathle', group: 'Play', href: '/portal/learn', status: 'soon', icon: Sigma, accent: 'from-teal-600 to-emerald-700', tagline: 'Daily puzzle' },
   { key: 'quiz_duel', label: 'Quiz Duel', group: 'Play', href: '/portal/learn', status: 'soon', icon: Users, accent: 'from-orange-600 to-amber-700', tagline: 'Challenge a pal' },
   { key: 'boss_battle', label: 'Boss Battle', group: 'Play', href: '/portal/learn', status: 'soon', icon: Trophy, accent: 'from-red-600 to-rose-700', tagline: 'Weekly boss' },
-  { key: 'revision_cards', label: 'Revision cards', group: 'Play', href: '/portal/learn', status: 'soon', icon: MessageSquareText, accent: 'from-emerald-600 to-green-700', tagline: 'Flip & learn' },
+  { key: 'revision_cards', label: 'Revision cards', group: 'Play', href: '/portal/revision', status: 'live', icon: MessageSquareText, accent: 'from-emerald-600 to-green-700', tagline: 'Flip & learn' },
   { key: 'focus_mode', label: 'Focus mode', group: 'Play', href: '/portal/learn', status: 'soon', icon: Zap, accent: 'from-slate-600 to-slate-800', tagline: 'Deep work' },
 
   // AI Tools
@@ -86,7 +86,7 @@ export const LEARNER_FEATURES: LearnerFeature[] = [
   { key: 'my_report', label: 'My report', group: 'Progress', href: '/portal/progress', status: 'live', icon: BarChart3, accent: 'from-blue-500 to-indigo-600' },
   { key: 'report_cards', label: 'Report cards', group: 'Progress', href: '/portal/progress', status: 'soon', icon: BarChart3, accent: 'from-violet-500 to-purple-600' },
   { key: 'badges', label: 'Badges', group: 'Progress', href: '/portal/progress', status: 'live', icon: Medal, accent: 'from-amber-500 to-yellow-600' },
-  { key: 'leagues', label: 'Leagues', group: 'Progress', href: '/portal/progress', status: 'live', icon: Trophy, accent: 'from-orange-500 to-amber-600' },
+  { key: 'leagues', label: 'Leagues', group: 'Progress', href: '/portal/leagues', status: 'live', icon: Trophy, accent: 'from-orange-500 to-amber-600' },
   { key: 'leaderboard', label: 'Leaderboard', group: 'Progress', href: '/portal/progress', status: 'live', icon: Users, accent: 'from-pink-500 to-rose-600' },
   { key: 'attendance', label: 'Attendance', group: 'Progress', href: '/portal/progress', status: 'live', icon: CalendarDays, accent: 'from-sky-500 to-cyan-600' },
   { key: 'my_behaviour', label: 'My behaviour', group: 'Progress', href: '/portal/progress', status: 'live', icon: CircleCheck, accent: 'from-teal-500 to-emerald-600' },
