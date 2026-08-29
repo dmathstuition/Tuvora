@@ -3,8 +3,10 @@ import { createClient } from '@/lib/supabase/server';
 import { getAuthContext, getProfile } from '@/lib/auth/context';
 import { isLinkedLearner } from '@/lib/auth/routing';
 import { listPermissions } from '@/lib/permissions';
+import { getTrialStatus } from '@/lib/entitlements/service';
 import { Sidebar } from '@/components/dashboard/sidebar';
 import { Topbar } from '@/components/dashboard/topbar';
+import { TrialBanner } from '@/components/dashboard/trial-banner';
 
 /**
  * Dashboard shell. Resolves the acting user + their active organization and
@@ -20,19 +22,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   const supabase = await createClient();
-  const [{ data: org }, profile] = await Promise.all([
+  const [{ data: org }, profile, { data: sub }, trialStatus] = await Promise.all([
     supabase.from('organizations').select('name, logo_url').eq('id', ctx.organizationId).single(),
     getProfile(),
+    supabase
+      .from('subscriptions')
+      .select('status, plan_id')
+      .eq('organization_id', ctx.organizationId)
+      .in('status', ['trialing', 'active', 'past_due', 'paused'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    getTrialStatus(ctx.organizationId),
   ]);
-
-  const { data: sub } = await supabase
-    .from('subscriptions')
-    .select('status, plan_id')
-    .eq('organization_id', ctx.organizationId)
-    .in('status', ['trialing', 'active', 'past_due', 'paused'])
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
 
   let planName: string | undefined;
   if (sub?.plan_id) {
@@ -44,9 +46,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
     planName = plan?.name;
   }
 
-  const planLabel = sub
-    ? `${planName ?? 'Plan'}${sub.status === 'trialing' ? ' · Trial' : ''}`
-    : 'No active plan';
+  let planLabel: string;
+  if (trialStatus.state === 'trialing') planLabel = `Free trial · ${trialStatus.daysLeft}d left`;
+  else if (trialStatus.state === 'trial_expired') planLabel = 'Trial ended';
+  else if (trialStatus.state === 'past_due') planLabel = 'Payment due';
+  else if (trialStatus.state === 'active') planLabel = planName ?? 'Active plan';
+  else planLabel = 'No active plan';
+
+  const onPaidPlan = trialStatus.state === 'active';
 
   const permissions = listPermissions(ctx);
 
@@ -59,7 +66,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             name: org?.name ?? 'Your organization',
             planLabel,
             logoUrl: org?.logo_url ?? null,
-            hasPlan: !!sub,
+            hasPlan: onPaidPlan,
           }}
         />
       </div>
@@ -72,6 +79,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
             planLabel={planLabel}
             permissions={permissions}
           />
+        </div>
+        <div className="print:hidden">
+          <TrialBanner status={trialStatus} />
         </div>
         <main className="flex-1 overflow-y-auto bg-muted/20 p-4 lg:p-8 print:overflow-visible print:bg-transparent print:p-0">
           {children}

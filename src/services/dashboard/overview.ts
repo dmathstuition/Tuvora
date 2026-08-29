@@ -103,15 +103,71 @@ export async function getDashboardOverview(): Promise<DashboardOverview | null> 
     getLearnerBillingSummary(orgId),
   ]);
 
-  // Attendance — today's rate + this-month breakdown.
-  const [{ data: todayRows }, { data: monthRows }] = await Promise.all([
+  // Everything below is independent of the batch above — run it all in parallel
+  // (one round trip instead of ~9 sequential ones) so the dashboard loads fast.
+  const [
+    { data: todayRows },
+    { data: monthRows },
+    { count: pendingAssignments },
+    { data: openInvoices },
+    { data: enrollDates },
+    { data: payRows },
+    { data: sub },
+    { data: activity },
+    { count: unread },
+    { count: classesWithAttToday },
+  ] = await Promise.all([
     supabase.from('attendance').select('status').eq('organization_id', orgId).eq('session_date', today),
     supabase
       .from('attendance')
       .select('status, session_date')
       .eq('organization_id', orgId)
       .gte('session_date', thisM.start.slice(0, 10)),
+    supabase
+      .from('assignment_submissions')
+      .select('id', { count: 'exact', head: true })
+      .eq('organization_id', orgId)
+      .in('status', ['submitted', 'late']),
+    supabase
+      .from('invoices')
+      .select('total_minor')
+      .eq('organization_id', orgId)
+      .eq('direction', 'tutor')
+      .eq('status', 'open'),
+    supabase
+      .from('learners')
+      .select('created_at')
+      .eq('organization_id', orgId)
+      .order('created_at', { ascending: true }),
+    supabase
+      .from('payments')
+      .select('amount_minor, paid_at, created_at')
+      .eq('organization_id', orgId)
+      .eq('direction', 'tutor')
+      .eq('status', 'succeeded')
+      .gte('created_at', thisM.start),
+    supabase
+      .from('subscriptions')
+      .select('plan_id, status')
+      .eq('organization_id', orgId)
+      .in('status', ['trialing', 'active', 'past_due', 'paused'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from('audit_logs')
+      .select('action, created_at')
+      .eq('organization_id', orgId)
+      .order('created_at', { ascending: false })
+      .limit(6),
+    supabase.from('messages').select('id', { count: 'exact', head: true }).eq('organization_id', orgId),
+    supabase
+      .from('attendance')
+      .select('class_id', { count: 'exact', head: true })
+      .eq('organization_id', orgId)
+      .eq('session_date', today),
   ]);
+
   const todayList = todayRows ?? [];
   const todayPresent = todayList.filter((r) => r.status === 'present' || r.status === 'late').length;
   const attendanceTodayPct = todayList.length
@@ -127,53 +183,15 @@ export async function getDashboardOverview(): Promise<DashboardOverview | null> 
     ? Math.round(((breakdown.present + breakdown.late) / breakdown.total) * 100)
     : 0;
 
-  // Pending assignments (submitted/late, not yet graded).
-  const { count: pendingAssignments } = await supabase
-    .from('assignment_submissions')
-    .select('id', { count: 'exact', head: true })
-    .eq('organization_id', orgId)
-    .in('status', ['submitted', 'late']);
-
-  // Outstanding = open tutor-direction invoices.
-  const { data: openInvoices } = await supabase
-    .from('invoices')
-    .select('total_minor')
-    .eq('organization_id', orgId)
-    .eq('direction', 'tutor')
-    .eq('status', 'open');
   const outstandingMinor = (openInvoices ?? []).reduce((s, i) => s + (i.total_minor ?? 0), 0);
-
-  // Learner growth — cumulative by week across the current month.
-  const { data: enrollDates } = await supabase
-    .from('learners')
-    .select('created_at')
-    .eq('organization_id', orgId)
-    .order('created_at', { ascending: true });
   const learnerGrowth = cumulativeByWeek((enrollDates ?? []).map((r) => r.created_at), 5);
-
-  // Revenue — succeeded tutor payments, weekly, this month.
-  const { data: payRows } = await supabase
-    .from('payments')
-    .select('amount_minor, paid_at, created_at')
-    .eq('organization_id', orgId)
-    .eq('direction', 'tutor')
-    .eq('status', 'succeeded')
-    .gte('created_at', thisM.start);
   const revenue = sumByWeek(
     (payRows ?? []).map((p) => ({ at: p.paid_at ?? p.created_at, amt: p.amount_minor ?? 0 })),
     5,
     100,
   );
 
-  // Subscription usage.
-  const { data: sub } = await supabase
-    .from('subscriptions')
-    .select('plan_id, status')
-    .eq('organization_id', orgId)
-    .in('status', ['trialing', 'active', 'past_due', 'paused'])
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  // Subscription usage — the plan lookup depends on the subscription above.
   let planName = 'Free Trial';
   let limit: number | null = null;
   if (sub?.plan_id) {
@@ -185,38 +203,10 @@ export async function getDashboardOverview(): Promise<DashboardOverview | null> 
     planName = plan?.name ?? planName;
     limit = plan?.included_learners ?? null;
   }
-  if (limit == null) {
-    const { data: limRes } = await supabase.rpc('get_learner_limit', { org: orgId });
-    if (typeof limRes === 'number') limit = limRes;
-  }
   const open = billing.open;
   const usagePct = limit && limit > 0 ? Math.round((open / limit) * 100) : 0;
 
-  // Recent activity.
-  const { data: activity } = await supabase
-    .from('audit_logs')
-    .select('action, created_at')
-    .eq('organization_id', orgId)
-    .order('created_at', { ascending: false })
-    .limit(6);
-
-  // Task counts.
-  const [{ count: gradeCount }, { count: unread }, { count: classesWithAttToday }] = await Promise.all([
-    supabase
-      .from('assignment_submissions')
-      .select('id', { count: 'exact', head: true })
-      .eq('organization_id', orgId)
-      .in('status', ['submitted', 'late']),
-    supabase
-      .from('messages')
-      .select('id', { count: 'exact', head: true })
-      .eq('organization_id', orgId),
-    supabase
-      .from('attendance')
-      .select('class_id', { count: 'exact', head: true })
-      .eq('organization_id', orgId)
-      .eq('session_date', today),
-  ]);
+  const gradeCount = pendingAssignments;
   const takeAttendance = Math.max((activeClasses ?? 0) - (classesWithAttToday ?? 0), 0);
 
   return {

@@ -20,12 +20,9 @@ export const getUser = cache(async () => {
 });
 
 export const getProfile = cache(async () => {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) return null;
-
+  const supabase = await createClient();
   const { data } = await supabase
     .from('profiles')
     .select('id, email, full_name, avatar_url, platform_role, last_active_organization_id')
@@ -38,20 +35,19 @@ export const getProfile = cache(async () => {
  * Build the AuthContext for the active organization. If `organizationId` is
  * omitted, falls back to the profile's last active organization.
  * Returns null when the user is unauthenticated.
+ *
+ * Wrapped in React `cache` and built on the cached `getUser`/`getProfile`, so
+ * the many services that resolve context in one render share a single set of
+ * auth queries instead of re-validating the session and re-reading membership
+ * on every call.
  */
-export async function getAuthContext(organizationId?: string): Promise<AuthContext | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export const getAuthContext = cache(async function getAuthContext(
+  organizationId?: string,
+): Promise<AuthContext | null> {
+  const [user, profile] = await Promise.all([getUser(), getProfile()]);
   if (!user) return null;
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('platform_role, last_active_organization_id')
-    .eq('id', user.id)
-    .single();
-
+  const supabase = await createClient();
   const orgId = organizationId ?? profile?.last_active_organization_id ?? null;
 
   let role: OrgRole | null = null;
@@ -79,7 +75,7 @@ export async function getAuthContext(organizationId?: string): Promise<AuthConte
     role,
     overrides,
   };
-}
+});
 
 /** List every organization the current user actively belongs to. */
 export async function getUserOrganizations() {
