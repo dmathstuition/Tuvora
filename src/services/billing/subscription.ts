@@ -163,15 +163,55 @@ export async function switchPlanAction(
 
   const { data: sub } = await supabase
     .from('subscriptions')
-    .select('id, status')
+    .select('id, status, trial_ends_at')
     .eq('organization_id', ctx.organizationId)
     .in('status', ['trialing', 'active', 'past_due', 'paused', 'incomplete'])
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 
+  const trialExpired =
+    sub?.status === 'trialing' &&
+    !!sub.trial_ends_at &&
+    new Date(sub.trial_ends_at).getTime() <= Date.now();
+
   // Trial / incomplete → switch the selected plan directly (no charge yet).
   if (!sub || sub.status === 'trialing' || sub.status === 'incomplete') {
+    // Once the trial window has closed, picking a plan must restore access.
+    // Real checkout is deferred, so we activate the chosen plan directly (a
+    // manual activation) — swap this for a provider charge when checkout lands.
+    if (trialExpired || sub?.status === 'incomplete') {
+      const now = new Date();
+      const periodEnd = new Date(now);
+      if (interval === 'yearly') periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+      else periodEnd.setMonth(periodEnd.getMonth() + 1);
+
+      const { error } = await supabase
+        .from('subscriptions')
+        .update({
+          plan_id: planId,
+          interval,
+          status: 'active',
+          current_period_start: now.toISOString(),
+          current_period_end: periodEnd.toISOString(),
+        })
+        .eq('id', sub!.id)
+        .eq('organization_id', ctx.organizationId);
+      if (error) return { error: 'Could not activate the plan.' };
+
+      await supabase.from('audit_logs').insert({
+        organization_id: ctx.organizationId,
+        actor_id: ctx.userId,
+        action: 'subscription.activated',
+        resource_type: 'subscription',
+        metadata: { plan: plan.name, interval },
+      });
+      revalidatePath('/dashboard/subscription');
+      revalidatePath('/', 'layout');
+      return { success: `You're now on the ${plan.name} plan. All features are unlocked.` };
+    }
+
+    // Still within the trial — record the choice; it applies when the trial converts.
     if (sub) {
       const { error } = await supabase
         .from('subscriptions')
@@ -188,6 +228,7 @@ export async function switchPlanAction(
       metadata: { plan: plan.name, interval },
     });
     revalidatePath('/dashboard/subscription');
+    revalidatePath('/', 'layout');
     return { success: `Your plan will be ${plan.name} when your trial converts.` };
   }
 
