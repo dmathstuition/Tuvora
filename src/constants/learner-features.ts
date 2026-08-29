@@ -65,8 +65,8 @@ export const LEARNER_FEATURES: LearnerFeature[] = [
   { key: 'my_plan', label: 'My plan', group: 'Learn', href: '/portal/learn', status: 'soon', icon: CalendarCheck, accent: 'from-cyan-500 to-sky-600' },
 
   // Play
-  { key: 'practice', label: 'Practice', group: 'Play', href: '/portal/learn', status: 'live', icon: Target, accent: 'from-blue-600 to-indigo-700', tagline: 'Earn points' },
-  { key: 'math_sprint', label: 'Math Sprint', group: 'Play', href: '/portal/learn', status: 'live', icon: Zap, accent: 'from-violet-600 to-purple-700', tagline: 'Beat the clock' },
+  { key: 'practice', label: 'Practice', group: 'Play', href: '/portal/games/practice', status: 'live', icon: Target, accent: 'from-blue-600 to-indigo-700', tagline: 'Earn points' },
+  { key: 'math_sprint', label: 'Math Sprint', group: 'Play', href: '/portal/games/sprint', status: 'live', icon: Zap, accent: 'from-violet-600 to-purple-700', tagline: 'Beat the clock' },
   { key: 'mathle', label: 'Mathle', group: 'Play', href: '/portal/learn', status: 'soon', icon: Sigma, accent: 'from-teal-600 to-emerald-700', tagline: 'Daily puzzle' },
   { key: 'quiz_duel', label: 'Quiz Duel', group: 'Play', href: '/portal/learn', status: 'soon', icon: Users, accent: 'from-orange-600 to-amber-700', tagline: 'Challenge a pal' },
   { key: 'boss_battle', label: 'Boss Battle', group: 'Play', href: '/portal/learn', status: 'soon', icon: Trophy, accent: 'from-red-600 to-rose-700', tagline: 'Weekly boss' },

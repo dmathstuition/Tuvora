@@ -332,6 +332,41 @@ export async function recordGameScoreAction(
   return { earned: correct, total: total ?? undefined };
 }
 
+/** Record a finished Practice or Math Sprint round as reward points. */
+export async function recordGameResultAction(
+  _prev: GameState,
+  formData: FormData,
+): Promise<GameState> {
+  const learnerId = await requireOwnLearnerId();
+  if (!learnerId) return { error: 'No linked learner account.' };
+
+  const mode = String(formData.get('mode') ?? 'practice') === 'sprint' ? 'sprint' : 'practice';
+  const cap = mode === 'sprint' ? 40 : 25;
+  const correct = Math.max(0, Math.min(cap, Number(formData.get('correct') ?? 0)));
+  if (!Number.isFinite(correct) || correct <= 0) return { earned: 0 };
+
+  const admin = createAdminClient();
+  const { data: learner } = await admin
+    .from('learners')
+    .select('id, organization_id')
+    .eq('id', learnerId)
+    .maybeSingle();
+  if (!learner) return { error: 'No linked learner account.' };
+
+  await admin.from('reward_events').insert({
+    organization_id: learner.organization_id,
+    learner_id: learnerId,
+    kind: 'reward',
+    points: correct,
+    category: 'game',
+    reason: mode === 'sprint' ? 'Math Sprint' : 'Practice round',
+  });
+
+  const { data: total } = await admin.rpc('learner_points', { learner: learnerId });
+  revalidatePath('/portal');
+  return { earned: correct, total: total ?? undefined };
+}
+
 export type ChestState = { error?: string; earned?: number; alreadyClaimed?: boolean };
 
 /** Claim the once-a-day reward chest (+5 points). Idempotent per calendar day. */

@@ -96,26 +96,43 @@ export default async function PortalHome() {
     <PortalShell active="home" studentId={studentId} avatarEmoji={avatar.emoji} themeGradient={theme.gradient}>
       <div className="space-y-6">
         {/* Today's Focus hero */}
-        <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-brand-700 to-brand-900 p-6 text-white">
-          <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-white/70">
-            <Sparkles className="h-3.5 w-3.5" /> Today&apos;s Focus
-          </p>
-          <h1 className="mt-2 text-3xl font-extrabold leading-tight">
-            {greeting()}, {learner.firstName}! 👋
-          </h1>
-          <p className="mt-2 max-w-md text-white/80">
-            {tasksWaiting > 0
-              ? `You have ${tasksWaiting} task${tasksWaiting === 1 ? '' : 's'} waiting. Complete ${tasksWaiting === 1 ? 'it' : 'them'} and keep your streak alive.`
-              : (org?.welcome ?? "You're all caught up — try a game to earn more points! 🚀")}
-          </p>
-          <div className="mt-4 flex flex-wrap items-center gap-2">
+        <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-brand-600 via-violet-600 to-fuchsia-600 p-6 text-white shadow-xl shadow-violet-500/20">
+          <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10" />
+          <div className="pointer-events-none absolute -bottom-12 right-16 h-28 w-28 rounded-full bg-amber-300/20" />
+          <div className="relative flex items-start gap-4">
+            <div className="min-w-0 flex-1">
+              <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-white/80">
+                <Sparkles className="h-3.5 w-3.5" /> Today&apos;s Focus
+              </p>
+              <h1 className="mt-2 text-3xl font-extrabold leading-tight">
+                {greeting()}, {learner.firstName}! 👋
+              </h1>
+              <p className="mt-2 max-w-md text-white/85">
+                {tasksWaiting > 0
+                  ? `You have ${tasksWaiting} task${tasksWaiting === 1 ? '' : 's'} waiting. Complete ${tasksWaiting === 1 ? 'it' : 'them'} and keep your streak alive.`
+                  : (org?.welcome ?? "You're all caught up — try a game to earn more points! 🚀")}
+              </p>
+            </div>
+            <div
+              className={cn(
+                'hidden h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-4xl ring-4 ring-white/40 sm:flex',
+                theme.gradient,
+              )}
+            >
+              {avatar.emoji}
+            </div>
+          </div>
+          <div className="relative mt-4 flex flex-wrap items-center gap-2">
             {grade && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-sm font-bold">
                 <GraduationCap className="h-4 w-4" /> {grade}
               </span>
             )}
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/90 px-3 py-1 text-sm font-bold text-brand-900">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1 text-sm font-extrabold text-brand-900">
               <Flame className="h-4 w-4" /> {streakDays}-day streak
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-sm font-bold">
+              <Sparkles className="h-4 w-4" /> {points} pts
             </span>
           </div>
         </section>

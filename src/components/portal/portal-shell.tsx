@@ -32,9 +32,14 @@ export function PortalShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[#f6f7fb] pb-24">
+    <div className="relative min-h-screen overflow-x-hidden bg-gradient-to-b from-indigo-50 via-fuchsia-50/50 to-amber-50/50 pb-24">
+      {/* Playful floating blobs */}
+      <div className="pointer-events-none fixed -left-20 top-24 h-56 w-56 rounded-full bg-sky-300/30 blur-3xl" />
+      <div className="pointer-events-none fixed -right-16 top-40 h-52 w-52 rounded-full bg-fuchsia-300/30 blur-3xl" />
+      <div className="pointer-events-none fixed bottom-24 left-1/3 h-48 w-48 rounded-full bg-amber-300/30 blur-3xl" />
+
       {/* Top bar */}
-      <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/85 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-white/60 bg-white/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
           <Link href="/portal" className="flex items-center gap-2" aria-label="Home">
             <LogoMark className="h-8 w-8" />
@@ -67,11 +72,11 @@ export function PortalShell({
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-4 py-5">{children}</main>
+      <main className="relative mx-auto max-w-3xl px-4 py-5">{children}</main>
 
       {/* Bottom tab bar */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-stretch justify-between px-2">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/60 bg-white/85 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-3xl items-stretch justify-between px-2 py-1.5">
           {TABS.map((t) => {
             const Icon = t.icon;
             const on = t.key === active;
@@ -80,11 +85,13 @@ export function PortalShell({
                 key={t.key}
                 href={t.href}
                 className={cn(
-                  'relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-semibold transition-colors',
-                  on ? 'text-brand-700' : 'text-slate-400 hover:text-slate-600',
+                  'relative flex flex-1 flex-col items-center gap-1 rounded-2xl py-2 text-[11px] font-bold transition-all',
+                  on ? 'text-white' : 'text-slate-400 hover:text-slate-600',
                 )}
               >
-                {on && <span className="absolute top-0 h-1 w-8 rounded-full bg-amber-400" />}
+                {on && (
+                  <span className="absolute inset-1 -z-10 rounded-2xl bg-gradient-to-br from-brand-500 to-violet-600 shadow-lg" />
+                )}
                 <Icon className="h-5 w-5" />
                 {t.label}
               </Link>
