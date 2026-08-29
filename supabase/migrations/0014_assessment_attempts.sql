@@ -15,7 +15,7 @@ alter table public.assessments
   add column if not exists subject_label text,
   add column if not exists grade_band text;
 
-create table public.assessment_attempts (
+create table if not exists public.assessment_attempts (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null references public.organizations(id) on delete cascade,
   assessment_id uuid not null references public.assessments(id) on delete cascade,
@@ -38,8 +38,8 @@ create table public.assessment_attempts (
   unique (assessment_id, learner_id)
 );
 
-create index assessment_attempts_org_idx on public.assessment_attempts(organization_id);
-create index assessment_attempts_learner_idx on public.assessment_attempts(learner_id);
+create index if not exists assessment_attempts_org_idx on public.assessment_attempts(organization_id);
+create index if not exists assessment_attempts_learner_idx on public.assessment_attempts(learner_id);
 
 drop trigger if exists assessment_attempts_set_updated_at on public.assessment_attempts;
 create trigger assessment_attempts_set_updated_at

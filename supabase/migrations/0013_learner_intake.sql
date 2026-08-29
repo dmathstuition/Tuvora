@@ -6,7 +6,7 @@
 -- goals, availability/capacity and logistics. One record per learner.
 -- ============================================================================
 
-create table public.learner_intake (
+create table if not exists public.learner_intake (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null references public.organizations(id) on delete cascade,
   learner_id uuid not null references public.learners(id) on delete cascade,
@@ -46,7 +46,7 @@ create table public.learner_intake (
   unique (learner_id)
 );
 
-create index learner_intake_org_idx on public.learner_intake(organization_id);
+create index if not exists learner_intake_org_idx on public.learner_intake(organization_id);
 
 drop trigger if exists learner_intake_set_updated_at on public.learner_intake;
 create trigger learner_intake_set_updated_at

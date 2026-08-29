@@ -44,9 +44,11 @@ function Modal({
 export function PlacementPanel({
   assessmentId,
   learners,
+  aiEnabled,
 }: {
   assessmentId: string;
   learners: { id: string; name: string }[];
+  aiEnabled: boolean;
 }) {
   const [openGen, setOpenGen] = useState(false);
   const [openAssign, setOpenAssign] = useState(false);
@@ -79,9 +81,20 @@ export function PlacementPanel({
       {openGen && (
         <Modal title="Generate placement questions" onClose={() => setOpenGen(false)}>
           <p className="mt-1 text-sm text-muted-foreground">
-            Auto-generate multiple-choice aptitude questions. Uses AI when configured, with a
-            built-in generator as a fallback.
+            Auto-generate multiple-choice aptitude questions.
           </p>
+          <div
+            className={`mt-3 flex items-start gap-2 rounded-md px-3 py-2 text-xs ${
+              aiEnabled ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'
+            }`}
+          >
+            <Sparkles className="mt-0.5 h-3.5 w-3.5 flex-none" />
+            <span>
+              {aiEnabled
+                ? 'AI generation is active — questions are authored by Claude.'
+                : 'No AI key configured — questions come from the built-in generator. Set ANTHROPIC_API_KEY to enable AI-authored questions.'}
+            </span>
+          </div>
           <form action={genAction} className="mt-4 space-y-4">
             <input type="hidden" name="assessmentId" value={assessmentId} />
             <div className="grid grid-cols-2 gap-3">

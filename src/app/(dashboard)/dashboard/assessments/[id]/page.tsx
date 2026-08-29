@@ -49,7 +49,11 @@ export default async function AssessmentDetailPage({ params }: { params: Promise
           {canManage && (
             <div className="flex flex-wrap gap-2">
               <AddQuestion assessmentId={assessment.id} />
-              <PlacementPanel assessmentId={assessment.id} learners={learners} />
+              <PlacementPanel
+                assessmentId={assessment.id}
+                learners={learners}
+                aiEnabled={!!process.env.ANTHROPIC_API_KEY}
+              />
               {assessment.status !== 'published' && questions.length > 0 && (
                 <form action={publishAssessmentAction}>
                   <input type="hidden" name="assessmentId" value={assessment.id} />
