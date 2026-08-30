@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Video, Users, User, ExternalLink } from 'lucide-react';
+import { Video, Users, User, ExternalLink, CalendarCheck } from 'lucide-react';
 import { getAuthContext } from '@/lib/auth/context';
 import { can } from '@/lib/permissions';
 import {
@@ -105,6 +105,14 @@ export default async function LessonsPage() {
                       className="inline-flex items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-2.5 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-100"
                     >
                       <ExternalLink className="h-3.5 w-3.5" /> Join
+                    </Link>
+                  )}
+                  {canManage && l.classId && (
+                    <Link
+                      href={`/dashboard/attendance?classId=${l.classId}&date=${new Date(l.startsAt).toISOString().slice(0, 10)}`}
+                      className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"
+                    >
+                      <CalendarCheck className="h-3.5 w-3.5" /> Attendance
                     </Link>
                   )}
                   {canManage && (

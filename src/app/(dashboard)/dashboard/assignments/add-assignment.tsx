@@ -7,7 +7,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-export function AddAssignmentButton({ classes }: { classes: { id: string; name: string }[] }) {
+export function AddAssignmentButton({
+  classes,
+  defaultClassId,
+  triggerLabel = 'New assignment',
+  triggerVariant = 'default',
+}: {
+  classes: { id: string; name: string }[];
+  defaultClassId?: string;
+  triggerLabel?: string;
+  triggerVariant?: 'default' | 'outline' | 'secondary';
+}) {
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState<CreateAssignmentState, FormData>(
     createAssignmentAction,
@@ -20,8 +30,8 @@ export function AddAssignmentButton({ classes }: { classes: { id: string; name: 
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>
-        <Plus className="h-4 w-4" /> New assignment
+      <Button onClick={() => setOpen(true)} variant={triggerVariant}>
+        <Plus className="h-4 w-4" /> {triggerLabel}
       </Button>
 
       {open && (
@@ -50,6 +60,7 @@ export function AddAssignmentButton({ classes }: { classes: { id: string; name: 
                   id="classId"
                   name="classId"
                   required
+                  defaultValue={defaultClassId ?? ''}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   {classes.map((c) => (
@@ -77,6 +88,21 @@ export function AddAssignmentButton({ classes }: { classes: { id: string; name: 
                   <Label htmlFor="dueAt">Due date</Label>
                   <Input id="dueAt" name="dueAt" type="date" />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="files">Question files / images (optional)</Label>
+                <input
+                  id="files"
+                  name="files"
+                  type="file"
+                  multiple
+                  accept="image/*,.pdf,.doc,.docx"
+                  className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-brand-700 hover:file:bg-brand-100"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Upload the question sheet or images. Learners can view these when they submit.
+                </p>
               </div>
 
               {state.error && (

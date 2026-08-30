@@ -16,8 +16,10 @@ import {
   ArrowRight,
   Video,
 } from 'lucide-react';
+import { NotebookPen } from 'lucide-react';
 import { getPortalData } from '@/services/portal';
 import { getMyLessons } from '@/services/portal/extras';
+import { getMyHomework } from '@/services/portal/homework';
 import { avatarFor, themeFor, levelFromPoints, tierFor, TIERS } from '@/constants/gamification';
 import { LEARNER_FEATURES } from '@/constants/learner-features';
 import { logoutAction } from '@/app/(auth)/actions';
@@ -36,7 +38,12 @@ function greeting(): string {
 }
 
 export default async function PortalHome() {
-  const [data, lessons] = await Promise.all([getPortalData(), getMyLessons()]);
+  const [data, lessons, homework] = await Promise.all([
+    getPortalData(),
+    getMyLessons(),
+    getMyHomework(),
+  ]);
+  const homeworkTodo = homework.filter((h) => h.status === 'assigned' || h.status === 'late').length;
 
   if (!data.linked || !data.learner) {
     return (
@@ -138,6 +145,30 @@ export default async function PortalHome() {
             </span>
           </div>
         </section>
+
+        {/* Homework */}
+        <Link
+          href="/portal/homework"
+          className="flex items-center gap-3 rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+            <NotebookPen className="h-5 w-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-brand-900">Homework</p>
+            <p className="text-xs text-slate-400">
+              {homeworkTodo > 0
+                ? `${homeworkTodo} task${homeworkTodo === 1 ? '' : 's'} to complete`
+                : 'All caught up 🎉'}
+            </p>
+          </div>
+          {homeworkTodo > 0 && (
+            <span className="rounded-full bg-amber-400 px-2.5 py-1 text-xs font-extrabold text-brand-900">
+              {homeworkTodo}
+            </span>
+          )}
+          <ArrowRight className="h-4 w-4 text-slate-300" />
+        </Link>
 
         {/* Upcoming online lessons */}
         {lessons.length > 0 && (

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Paperclip, FileText } from 'lucide-react';
 import { getAssignmentDetail } from '@/services/assignments';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,7 +27,7 @@ export default async function AssignmentDetailPage({
   const detail = await getAssignmentDetail(id);
   if (!detail) notFound();
 
-  const { assignment, className, submissions, canGrade } = detail;
+  const { assignment, className, questionFiles, submissions, canGrade } = detail;
   const gradedCount = submissions.filter(
     (s) => s.status === 'graded' || s.status === 'returned',
   ).length;
@@ -60,6 +60,35 @@ export default async function AssignmentDetailPage({
         </Card>
       )}
 
+      {questionFiles.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Paperclip className="h-4 w-4" /> Question files
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            {questionFiles.map((f) =>
+              f.url ? (
+                <a
+                  key={f.id}
+                  href={f.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-sm font-medium hover:bg-muted"
+                >
+                  <FileText className="h-4 w-4 text-brand-600" /> {f.name}
+                </a>
+              ) : (
+                <span key={f.id} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm text-muted-foreground">
+                  <FileText className="h-4 w-4" /> {f.name}
+                </span>
+              ),
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
@@ -79,6 +108,7 @@ export default async function AssignmentDetailPage({
               <thead className="border-b text-left text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 font-medium">Learner</th>
+                  <th className="px-4 py-3 font-medium">Submitted work</th>
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium">Score</th>
                   {canGrade && <th className="px-4 py-3" />}
@@ -88,8 +118,36 @@ export default async function AssignmentDetailPage({
                 {submissions.map((s) => {
                   const graded = s.status === 'graded' || s.status === 'returned';
                   return (
-                    <tr key={s.id} className="border-b last:border-0">
+                    <tr key={s.id} className="border-b last:border-0 align-top">
                       <td className="px-4 py-3 font-medium">{s.learner_name}</td>
+                      <td className="px-4 py-3">
+                        {s.content || s.files.length > 0 ? (
+                          <div className="space-y-1.5">
+                            {s.content && (
+                              <p className="max-w-xs whitespace-pre-wrap text-xs text-muted-foreground line-clamp-3">
+                                {s.content}
+                              </p>
+                            )}
+                            {s.files.map((f) =>
+                              f.url ? (
+                                <a
+                                  key={f.id}
+                                  href={f.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 rounded border bg-muted/40 px-2 py-1 text-xs font-medium hover:bg-muted"
+                                >
+                                  <Paperclip className="h-3 w-3" /> {f.name}
+                                </a>
+                              ) : (
+                                <span key={f.id} className="text-xs text-muted-foreground">{f.name}</span>
+                              ),
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3">
                         <Badge variant={statusVariant[s.status] ?? 'secondary'}>{s.status}</Badge>
                       </td>
