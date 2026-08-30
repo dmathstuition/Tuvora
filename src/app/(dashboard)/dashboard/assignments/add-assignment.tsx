@@ -11,16 +11,23 @@ import { cn } from '@/lib/utils';
 
 export function AddAssignmentButton({
   classes,
+  learners = [],
   defaultClassId,
   triggerLabel = 'New assignment',
   triggerVariant = 'default',
 }: {
   classes: { id: string; name: string }[];
+  learners?: { id: string; name: string }[];
   defaultClassId?: string;
   triggerLabel?: string;
   triggerVariant?: 'default' | 'outline' | 'secondary';
 }) {
   const [open, setOpen] = useState(false);
+  // A one-to-one assignment goes to a single learner; a class assignment goes
+  // to everyone enrolled. Default to class when classes exist, else one-to-one.
+  const [target, setTarget] = useState<'class' | 'learner'>(
+    classes.length > 0 ? 'class' : 'learner',
+  );
   const [formats, setFormats] = useState<HomeworkFormat[]>(ALL_HOMEWORK_FORMATS);
   const [state, formAction, pending] = useActionState<CreateAssignmentState, FormData>(
     createAssignmentAction,
@@ -31,8 +38,9 @@ export function AddAssignmentButton({
     if (state.success) {
       setOpen(false);
       setFormats(ALL_HOMEWORK_FORMATS);
+      setTarget(classes.length > 0 ? 'class' : 'learner');
     }
-  }, [state.success]);
+  }, [state.success, classes.length]);
 
   function toggleFormat(key: HomeworkFormat) {
     setFormats((prev) =>
@@ -66,22 +74,86 @@ export function AddAssignmentButton({
                 <Label htmlFor="title">Title</Label>
                 <Input id="title" name="title" placeholder="e.g. Algebra worksheet 3" required />
               </div>
+              {/* target travels to the server so it knows how to seed submissions */}
+              <input type="hidden" name="target" value={target} />
               <div className="space-y-2">
-                <Label htmlFor="classId">Class</Label>
-                <select
-                  id="classId"
-                  name="classId"
-                  required
-                  defaultValue={defaultClassId ?? ''}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  {classes.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                <Label>Assign to</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTarget('class')}
+                    disabled={classes.length === 0}
+                    aria-pressed={target === 'class'}
+                    className={cn(
+                      'rounded-lg border px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50',
+                      target === 'class'
+                        ? 'border-brand-500 bg-brand-50/60 text-brand-700'
+                        : 'border-input bg-background hover:border-brand-300',
+                    )}
+                  >
+                    A class
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTarget('learner')}
+                    disabled={learners.length === 0}
+                    aria-pressed={target === 'learner'}
+                    className={cn(
+                      'rounded-lg border px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50',
+                      target === 'learner'
+                        ? 'border-brand-500 bg-brand-50/60 text-brand-700'
+                        : 'border-input bg-background hover:border-brand-300',
+                    )}
+                  >
+                    One learner (1:1)
+                  </button>
+                </div>
               </div>
+
+              {target === 'class' ? (
+                <div className="space-y-2">
+                  <Label htmlFor="classId">Class</Label>
+                  <select
+                    id="classId"
+                    name="classId"
+                    required
+                    defaultValue={defaultClassId ?? ''}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="" disabled>
+                      Select a class…
+                    </option>
+                    {classes.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="learnerId">Learner</Label>
+                  <select
+                    id="learnerId"
+                    name="learnerId"
+                    required
+                    defaultValue=""
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="" disabled>
+                      Select a learner…
+                    </option>
+                    {learners.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted-foreground">
+                    Only this learner gets the assignment — great for extra or catch-up work.
+                  </p>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="instructions">Instructions</Label>
                 <textarea

@@ -35,6 +35,23 @@ export async function getClassOptions(): Promise<{ id: string; name: string }[]>
   return data ?? [];
 }
 
+/** Active learners for the one-to-one assignment picker. */
+export async function getLearnerOptions(): Promise<{ id: string; name: string }[]> {
+  const ctx = await getAuthContext();
+  if (!ctx?.organizationId) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('learners')
+    .select('id, first_name, last_name')
+    .eq('organization_id', ctx.organizationId)
+    .eq('status', 'active')
+    .order('first_name');
+  return (data ?? []).map((l) => ({
+    id: l.id,
+    name: `${l.first_name} ${l.last_name ?? ''}`.trim(),
+  }));
+}
+
 export async function listAssignments(): Promise<AssignmentListItem[]> {
   const ctx = await getAuthContext();
   if (!ctx?.organizationId) return [];
@@ -61,10 +78,10 @@ export async function listAssignments(): Promise<AssignmentListItem[]> {
     for (const c of classes ?? []) classNames.set(c.id, c.name);
   }
 
-  // Submission tallies per assignment.
+  // Submission tallies per assignment (learner_id lets us name 1:1 targets).
   const { data: subs } = await supabase
     .from('assignment_submissions')
-    .select('assignment_id, status')
+    .select('assignment_id, status, learner_id')
     .eq('organization_id', ctx.organizationId)
     .in(
       'assignment_id',
@@ -72,23 +89,52 @@ export async function listAssignments(): Promise<AssignmentListItem[]> {
     );
   const totals = new Map<string, number>();
   const graded = new Map<string, number>();
+  const soleLearner = new Map<string, string>();
   for (const s of subs ?? []) {
     totals.set(s.assignment_id, (totals.get(s.assignment_id) ?? 0) + 1);
+    soleLearner.set(s.assignment_id, s.learner_id);
     if (s.status === 'graded' || s.status === 'returned') {
       graded.set(s.assignment_id, (graded.get(s.assignment_id) ?? 0) + 1);
     }
   }
 
-  return rows.map((r) => ({
-    id: r.id,
-    title: r.title,
-    status: r.status,
-    due_at: r.due_at,
-    max_points: r.max_points,
-    class_name: r.class_id ? (classNames.get(r.class_id) ?? null) : null,
-    total: totals.get(r.id) ?? 0,
-    graded: graded.get(r.id) ?? 0,
-  }));
+  // Names for one-to-one assignments (no class).
+  const oneToOneLearnerIds = [
+    ...new Set(
+      rows.filter((r) => !r.class_id).map((r) => soleLearner.get(r.id)).filter(Boolean) as string[],
+    ),
+  ];
+  const learnerNames = new Map<string, string>();
+  if (oneToOneLearnerIds.length > 0) {
+    const { data: ls } = await supabase
+      .from('learners')
+      .select('id, first_name, last_name')
+      .in('id', oneToOneLearnerIds);
+    for (const l of ls ?? []) {
+      learnerNames.set(l.id, `${l.first_name} ${l.last_name ?? ''}`.trim());
+    }
+  }
+
+  return rows.map((r) => {
+    let className: string | null = null;
+    if (r.class_id) {
+      className = classNames.get(r.class_id) ?? null;
+    } else {
+      const learnerId = soleLearner.get(r.id);
+      const name = learnerId ? learnerNames.get(learnerId) : null;
+      className = name ? `1:1 · ${name}` : '1:1';
+    }
+    return {
+      id: r.id,
+      title: r.title,
+      status: r.status,
+      due_at: r.due_at,
+      max_points: r.max_points,
+      class_name: className,
+      total: totals.get(r.id) ?? 0,
+      graded: graded.get(r.id) ?? 0,
+    };
+  });
 }
 
 export interface AttachedFile {
@@ -161,6 +207,13 @@ export async function getAssignmentDetail(id: string): Promise<AssignmentDetail 
     for (const l of learners ?? []) {
       names.set(l.id, `${l.first_name} ${l.last_name ?? ''}`.trim());
     }
+  }
+
+  // One-to-one assignment (no class): label it by the single learner.
+  if (!assignment.class_id) {
+    const soleId = (subs ?? [])[0]?.learner_id;
+    const soleName = soleId ? names.get(soleId) : null;
+    className = soleName ? `1:1 · ${soleName}` : '1:1';
   }
 
   // Submission files, grouped per submission.
@@ -238,7 +291,9 @@ export async function createAssignmentAction(
 
   const parsed = createAssignmentSchema.safeParse({
     title: formData.get('title'),
-    classId: formData.get('classId'),
+    target: (formData.get('target') as string) || 'class',
+    classId: formData.get('classId') || '',
+    learnerId: formData.get('learnerId') || '',
     instructions: formData.get('instructions') || '',
     maxPoints: formData.get('maxPoints') || undefined,
     dueAt: formData.get('dueAt') || '',
@@ -247,14 +302,27 @@ export async function createAssignmentAction(
     return { error: parsed.error.issues[0]?.message ?? 'Please check the form' };
   }
 
+  const isOneToOne = parsed.data.target === 'learner';
+  const supabase = await createClient();
+
+  // For one-to-one, confirm the learner belongs to this org before assigning.
+  if (isOneToOne) {
+    const { data: learner } = await supabase
+      .from('learners')
+      .select('id')
+      .eq('id', parsed.data.learnerId!)
+      .eq('organization_id', ctx.organizationId)
+      .maybeSingle();
+    if (!learner) return { error: 'That learner could not be found.' };
+  }
+
   const allowedFormats = sanitizeFormats(formData.getAll('formats').map(String));
 
-  const supabase = await createClient();
   const { data: assignment, error } = await supabase
     .from('assignments')
     .insert({
       organization_id: ctx.organizationId,
-      class_id: parsed.data.classId,
+      class_id: isOneToOne ? null : parsed.data.classId!,
       title: parsed.data.title,
       instructions: parsed.data.instructions || null,
       max_points: parsed.data.maxPoints ?? null,
@@ -294,19 +362,25 @@ export async function createAssignmentAction(
     }
   }
 
-  // Seed submissions for enrolled learners.
-  const { data: members } = await supabase
-    .from('class_members')
-    .select('learner_id')
-    .eq('organization_id', ctx.organizationId)
-    .eq('class_id', parsed.data.classId);
+  // Seed submissions: one for the chosen learner, or one per class member.
+  let learnerIds: string[] = [];
+  if (isOneToOne) {
+    learnerIds = [parsed.data.learnerId!];
+  } else {
+    const { data: members } = await supabase
+      .from('class_members')
+      .select('learner_id')
+      .eq('organization_id', ctx.organizationId)
+      .eq('class_id', parsed.data.classId!);
+    learnerIds = (members ?? []).map((m) => m.learner_id);
+  }
 
-  if (members && members.length > 0) {
+  if (learnerIds.length > 0) {
     await supabase.from('assignment_submissions').insert(
-      members.map((m) => ({
+      learnerIds.map((learnerId) => ({
         organization_id: ctx.organizationId!,
         assignment_id: assignment.id,
-        learner_id: m.learner_id,
+        learner_id: learnerId,
         status: 'assigned' as const,
       })),
     );
