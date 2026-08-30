@@ -69,6 +69,18 @@ export function SignupForm({
         {pending ? 'Creating account…' : 'Create account'}
       </Button>
 
+      <p className="text-center text-xs text-muted-foreground">
+        By creating an account you agree to our{' '}
+        <Link href="/terms" className="font-medium text-primary hover:underline">
+          Terms of Service
+        </Link>{' '}
+        and{' '}
+        <Link href="/privacy" className="font-medium text-primary hover:underline">
+          Privacy Policy
+        </Link>
+        .
+      </p>
+
       <p className="text-center text-sm text-muted-foreground">
         Already have an account?{' '}
         <Link href="/login" className="font-medium text-primary hover:underline">
