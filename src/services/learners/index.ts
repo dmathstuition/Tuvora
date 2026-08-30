@@ -3,10 +3,13 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { getAuthContext } from '@/lib/auth/context';
+import { getAuthContext, getProfile } from '@/lib/auth/context';
 import { assertCan, can, ForbiddenError } from '@/lib/permissions';
 import { getTrialStatus } from '@/lib/entitlements/service';
 import { uploadPublicImage } from '@/lib/storage/images';
+import { getRequestBaseUrl } from '@/lib/base-url';
+import { paystackConfigured } from '@/lib/paystack/client';
+import { beginLearnerCheckout } from '@/lib/paystack/checkout';
 import { createLearnerSchema } from '@/schemas/learner';
 import type { Database } from '@/types/database.types';
 
@@ -132,22 +135,12 @@ export async function createLearnerAction(
   const supabase = await createClient();
 
   // During the academy's 14-day free trial EVERY learner opens immediately and
-  // free — nothing is held back. Outside the trial the per-learner billing model
-  // applies: the single free-trial learner is still available, everyone else is
-  // created inactive until paid for the month.
+  // free. After the trial, each new learner must be paid for (₦15,000/month) —
+  // the learner is created inactive and the admin is taken straight to a secure
+  // Paystack checkout; the account opens once the payment is confirmed.
   const orgTrial = await getTrialStatus(ctx.organizationId);
   const inFreeTrial = orgTrial.state === 'trialing';
 
-  let useTrial = inFreeTrial;
-  if (!inFreeTrial) {
-    const { data: trialUsed } = await supabase.rpc('org_free_trial_used', {
-      org: ctx.organizationId,
-    });
-    useTrial = !trialUsed;
-  }
-
-  // Create the learner. Trial learners open immediately (active); others start
-  // inactive until paid for the month.
   const { data: learner, error } = await supabase
     .from('learners')
     .insert({
@@ -156,7 +149,7 @@ export async function createLearnerAction(
       last_name: parsed.data.lastName || null,
       email: parsed.data.email || null,
       phone: parsed.data.phone || null,
-      status: useTrial ? 'active' : 'inactive',
+      status: inFreeTrial ? 'active' : 'inactive',
     })
     .select('id')
     .single();
@@ -164,10 +157,8 @@ export async function createLearnerAction(
   if (error || !learner) return { error: 'Could not add the learner. Please try again.' };
 
   const now = new Date();
-  if (useTrial) {
-    // Trial learners run until the academy trial ends (or a month for the
-    // legacy single-free-learner case outside the trial window).
-    const periodEnd = inFreeTrial && orgTrial.trialEndsAt ? new Date(orgTrial.trialEndsAt) : addMonth(now);
+  if (inFreeTrial) {
+    const periodEnd = orgTrial.trialEndsAt ? new Date(orgTrial.trialEndsAt) : addMonth(now);
     await supabase.from('learner_billing').insert({
       organization_id: ctx.organizationId,
       learner_id: learner.id,
@@ -191,14 +182,32 @@ export async function createLearnerAction(
     action: 'learner.created',
     resource_type: 'learner',
     resource_id: learner.id,
-    metadata: {
-      name: `${parsed.data.firstName} ${parsed.data.lastName}`.trim(),
-      trial: useTrial,
-    },
+    metadata: { name: `${parsed.data.firstName} ${parsed.data.lastName}`.trim(), trial: inFreeTrial },
   });
 
   revalidatePath('/dashboard/learners');
-  return { success: true, needsPayment: !useTrial };
+
+  // Outside the trial: take payment now (Paystack). If payments aren't
+  // configured, the learner stays inactive and can be paid for later.
+  if (!inFreeTrial && paystackConfigured()) {
+    const email = parsed.data.email || (await getProfile())?.email;
+    if (email) {
+      let url: string | null = null;
+      try {
+        url = await beginLearnerCheckout({
+          organizationId: ctx.organizationId,
+          learnerId: learner.id,
+          payerEmail: email,
+          baseUrl: await getRequestBaseUrl(),
+        });
+      } catch {
+        url = null;
+      }
+      if (url) redirect(url);
+    }
+  }
+
+  return { success: true, needsPayment: !inFreeTrial };
 }
 
 // ---------------------------------------------------------------------------
