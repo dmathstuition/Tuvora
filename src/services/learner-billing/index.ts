@@ -1,9 +1,14 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { getAuthContext } from '@/lib/auth/context';
+import { getAuthContext, getProfile } from '@/lib/auth/context';
 import { assertCan, ForbiddenError } from '@/lib/permissions';
+import { getRequestBaseUrl } from '@/lib/base-url';
+import { paystackConfigured } from '@/lib/paystack/client';
+import { beginLearnerCheckout } from '@/lib/paystack/checkout';
+import { defaultPerLearnerMinor } from '@/constants/billing';
 
 export interface PerLearnerPrice {
   amountMinor: number;
@@ -43,7 +48,10 @@ export async function getPerLearnerPrice(organizationId: string): Promise<PerLea
     .eq('currency', currency)
     .maybeSingle();
 
-  return { amountMinor: price?.per_learner_monthly_price_minor ?? 0, currency };
+  const configured = price?.per_learner_monthly_price_minor ?? 0;
+  // Fall back to the platform default (₦15,000/mo for NGN) when a plan has no
+  // explicit per-learner price configured.
+  return { amountMinor: configured > 0 ? configured : defaultPerLearnerMinor(currency), currency };
 }
 
 export interface LearnerBillingSummary {
@@ -69,6 +77,65 @@ function addMonth(from: Date): Date {
   const d = new Date(from);
   d.setMonth(d.getMonth() + 1);
   return d;
+}
+
+export type StartPaymentState = { error?: string };
+
+/**
+ * Start a secure Paystack checkout to pay a learner's month (₦15,000 by default).
+ *
+ * The amount is set here from the server-side price — never the client — and a
+ * pending payment row is created and keyed by the Paystack reference, so the
+ * account can only be opened after the provider confirms that exact payment
+ * (via webhook or the verified callback). Redirects the admin to Paystack.
+ */
+export async function startLearnerPaymentAction(
+  _prev: StartPaymentState,
+  formData: FormData,
+): Promise<StartPaymentState> {
+  const ctx = await getAuthContext();
+  if (!ctx?.organizationId) return { error: 'No active organization' };
+  try {
+    assertCan(ctx, 'billing.manage');
+  } catch (e) {
+    if (e instanceof ForbiddenError) return { error: 'You cannot manage learner billing.' };
+    throw e;
+  }
+  if (!paystackConfigured()) {
+    return { error: 'Online payments are not configured yet. Please contact support.' };
+  }
+
+  const learnerId = String(formData.get('learnerId') ?? '');
+  if (!learnerId) return { error: 'No learner specified.' };
+
+  const supabase = await createClient();
+  const { data: learner } = await supabase
+    .from('learners')
+    .select('id, email')
+    .eq('id', learnerId)
+    .eq('organization_id', ctx.organizationId)
+    .maybeSingle();
+  if (!learner) return { error: 'Learner not found.' };
+
+  // Paystack needs a payer email — use the learner's, else the admin's.
+  const profile = await getProfile();
+  const email = learner.email || profile?.email;
+  if (!email) return { error: 'Add an email to this learner (or your profile) to take payment.' };
+
+  const baseUrl = await getRequestBaseUrl();
+  let authorizationUrl: string;
+  try {
+    authorizationUrl = await beginLearnerCheckout({
+      organizationId: ctx.organizationId,
+      learnerId,
+      payerEmail: email,
+      baseUrl,
+    });
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Could not start the payment.' };
+  }
+
+  redirect(authorizationUrl);
 }
 
 export type ActivateLearnerState = { error?: string; success?: boolean };

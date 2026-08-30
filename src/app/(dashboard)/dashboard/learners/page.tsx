@@ -21,7 +21,12 @@ const billingLabel: Record<LearnerBillingBadge, { text: string; variant: 'succes
   unpaid: { text: 'Payment required', variant: 'warning' },
 };
 
-export default async function LearnersPage() {
+export default async function LearnersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ payment?: string }>;
+}) {
+  const { payment } = await searchParams;
   const ctx = await getAuthContext();
   if (!ctx?.organizationId) redirect('/onboarding');
   const organizationId = ctx.organizationId;
@@ -48,9 +53,21 @@ export default async function LearnersPage() {
         {canCreate && <AddLearnerButton />}
       </div>
 
+      {payment === 'success' && (
+        <div className="rounded-md border border-success/40 bg-success/10 px-4 py-3 text-sm text-success">
+          Payment received — the learner&apos;s account is now open.
+        </div>
+      )}
+      {payment === 'failed' && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          The payment didn&apos;t go through. You can try again with the Pay button.
+        </div>
+      )}
+
       <div className="rounded-md border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-        You&apos;re billed per learner, per month. Your first learner is free for one month; every
-        other learner&apos;s account opens once their month is paid.
+        During your 14-day free trial every learner is free. After the trial, each learner is{' '}
+        {priceLabel}/month — pay securely with Paystack when you add a learner, or with the Pay
+        button below. Their portal opens as soon as payment is confirmed.
       </div>
 
       {total === 0 ? (
