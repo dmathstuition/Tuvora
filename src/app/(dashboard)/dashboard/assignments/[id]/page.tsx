@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { GradeSubmission } from './grade-submission';
+import { SubmittedWork } from './submitted-work';
 
 export const metadata: Metadata = { title: 'Assignment' };
 
@@ -121,32 +122,7 @@ export default async function AssignmentDetailPage({
                     <tr key={s.id} className="border-b last:border-0 align-top">
                       <td className="px-4 py-3 font-medium">{s.learner_name}</td>
                       <td className="px-4 py-3">
-                        {s.content || s.files.length > 0 ? (
-                          <div className="space-y-1.5">
-                            {s.content && (
-                              <p className="max-w-xs whitespace-pre-wrap text-xs text-muted-foreground line-clamp-3">
-                                {s.content}
-                              </p>
-                            )}
-                            {s.files.map((f) =>
-                              f.url ? (
-                                <a
-                                  key={f.id}
-                                  href={f.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 rounded border bg-muted/40 px-2 py-1 text-xs font-medium hover:bg-muted"
-                                >
-                                  <Paperclip className="h-3 w-3" /> {f.name}
-                                </a>
-                              ) : (
-                                <span key={f.id} className="text-xs text-muted-foreground">{f.name}</span>
-                              ),
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
-                        )}
+                        <SubmittedWork content={s.content} files={s.files} />
                       </td>
                       <td className="px-4 py-3">
                         <Badge variant={statusVariant[s.status] ?? 'secondary'}>{s.status}</Badge>

@@ -1,11 +1,13 @@
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Check } from 'lucide-react';
 import { createAssignmentAction, type CreateAssignmentState } from '@/services/assignments';
+import { HOMEWORK_FORMATS, ALL_HOMEWORK_FORMATS, type HomeworkFormat } from '@/constants/homework';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 export function AddAssignmentButton({
   classes,
@@ -19,14 +21,24 @@ export function AddAssignmentButton({
   triggerVariant?: 'default' | 'outline' | 'secondary';
 }) {
   const [open, setOpen] = useState(false);
+  const [formats, setFormats] = useState<HomeworkFormat[]>(ALL_HOMEWORK_FORMATS);
   const [state, formAction, pending] = useActionState<CreateAssignmentState, FormData>(
     createAssignmentAction,
     {},
   );
 
   useEffect(() => {
-    if (state.success) setOpen(false);
+    if (state.success) {
+      setOpen(false);
+      setFormats(ALL_HOMEWORK_FORMATS);
+    }
   }, [state.success]);
+
+  function toggleFormat(key: HomeworkFormat) {
+    setFormats((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+    );
+  }
 
   return (
     <>
@@ -102,6 +114,51 @@ export function AddAssignmentButton({
                 />
                 <p className="text-xs text-muted-foreground">
                   Upload the question sheet or images. Learners can view these when they submit.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>How learners may answer</Label>
+                {/* Selected keys travel to the server as repeated `formats` fields. */}
+                {formats.map((k) => (
+                  <input key={k} type="hidden" name="formats" value={k} />
+                ))}
+                <div className="grid grid-cols-2 gap-2">
+                  {HOMEWORK_FORMATS.map((f) => {
+                    const on = formats.includes(f.key);
+                    return (
+                      <button
+                        type="button"
+                        key={f.key}
+                        onClick={() => toggleFormat(f.key)}
+                        aria-pressed={on}
+                        className={cn(
+                          'flex items-start gap-2 rounded-lg border p-2.5 text-left transition',
+                          on
+                            ? 'border-brand-500 bg-brand-50/60'
+                            : 'border-input bg-background hover:border-brand-300',
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border',
+                            on ? 'border-brand-600 bg-brand-600 text-white' : 'border-muted-foreground/40',
+                          )}
+                        >
+                          {on && <Check className="h-3 w-3" />}
+                        </span>
+                        <span>
+                          <span className="block text-sm font-medium">{f.label}</span>
+                          <span className="block text-xs text-muted-foreground">{f.hint}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {formats.length === 0
+                    ? 'Pick at least one — all formats will be allowed if none are chosen.'
+                    : 'Learners will only see the formats you allow.'}
                 </p>
               </div>
 
