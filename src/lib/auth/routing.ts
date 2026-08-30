@@ -62,12 +62,20 @@ export async function resolveHomePath(): Promise<HomePath> {
 
   const { data: membership } = await supabase
     .from('organization_members')
-    .select('id')
+    .select('organization_id')
     .eq('user_id', user.id)
     .eq('status', 'active')
     .limit(1)
     .maybeSingle();
-  if (membership) return '/dashboard';
+  if (membership) {
+    // A member whose org hasn't finished onboarding resumes the wizard.
+    const { data: org } = await supabase
+      .from('organizations')
+      .select('onboarding_completed_at')
+      .eq('id', membership.organization_id)
+      .maybeSingle();
+    return org && !org.onboarding_completed_at ? '/onboarding' : '/dashboard';
+  }
 
   if (await isLinkedLearner()) return '/portal';
   return '/onboarding';

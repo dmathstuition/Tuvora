@@ -32,6 +32,9 @@ export interface Database {
           avatar_url: string | null;
           platform_role: 'none' | 'platform_support' | 'super_admin';
           last_active_organization_id: string | null;
+          phone: string | null;
+          country: string | null;
+          timezone: string | null;
         } & Timestamps;
         Insert: {
           id: string;
@@ -40,6 +43,9 @@ export interface Database {
           avatar_url?: string | null;
           platform_role?: 'none' | 'platform_support' | 'super_admin';
           last_active_organization_id?: string | null;
+          phone?: string | null;
+          country?: string | null;
+          timezone?: string | null;
         };
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>;
         Relationships: [];
@@ -61,6 +67,11 @@ export interface Database {
           brand_color: string | null;
           employs_tutors: boolean;
           portal_preferences: Json;
+          website: string | null;
+          phone: string | null;
+          city: string | null;
+          settings: Json;
+          onboarding_step: number;
           onboarding_completed_at: string | null;
           archived_at: string | null;
         } & Timestamps;
@@ -80,12 +91,22 @@ export interface Database {
           brand_color?: string | null;
           logo_url?: string | null;
           favicon_url?: string | null;
+          website?: string | null;
+          phone?: string | null;
+          city?: string | null;
+          settings?: Json;
+          onboarding_step?: number;
         };
         Update: Partial<Database['public']['Tables']['organizations']['Insert']> & {
           email?: string | null;
           logo_url?: string | null;
           favicon_url?: string | null;
           brand_color?: string | null;
+          website?: string | null;
+          phone?: string | null;
+          city?: string | null;
+          settings?: Json;
+          onboarding_step?: number;
           onboarding_completed_at?: string | null;
           archived_at?: string | null;
         };

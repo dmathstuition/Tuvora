@@ -23,7 +23,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const supabase = await createClient();
   const [{ data: org }, profile, { data: sub }, trialStatus] = await Promise.all([
-    supabase.from('organizations').select('name, logo_url').eq('id', ctx.organizationId).single(),
+    supabase
+      .from('organizations')
+      .select('name, logo_url, onboarding_completed_at')
+      .eq('id', ctx.organizationId)
+      .single(),
     getProfile(),
     supabase
       .from('subscriptions')
@@ -35,6 +39,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
       .maybeSingle(),
     getTrialStatus(ctx.organizationId),
   ]);
+
+  // A draft org exists during onboarding — keep the user in the wizard (which
+  // resumes at their saved step) until they finish it.
+  if (org && !org.onboarding_completed_at) redirect('/onboarding');
 
   let planName: string | undefined;
   if (sub?.plan_id) {
