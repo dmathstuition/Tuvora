@@ -1,8 +1,8 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getUser } from '@/lib/auth/context';
 import { AVATARS, THEMES, DEFAULT_AVATAR, DEFAULT_THEME } from '@/constants/gamification';
 import { effectiveEnabledFeatures } from '@/lib/portal/feature-flags';
 import { getPlatformFeatureAvailability } from '@/services/portal/features';
@@ -55,10 +55,7 @@ export interface PortalData {
  * resolved learner and their organization.
  */
 export async function getPortalData(): Promise<PortalData> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) return { linked: false };
 
   const admin = createAdminClient();
@@ -254,10 +251,7 @@ export async function getPortalData(): Promise<PortalData> {
 
 /** Resolve + verify the signed-in user's learner id (ownership guard). */
 async function requireOwnLearnerId(): Promise<string | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) return null;
   const admin = createAdminClient();
   const { data } = await admin
