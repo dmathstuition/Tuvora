@@ -37,6 +37,16 @@ export async function updateSession(request: NextRequest) {
     return response;
   }
 
+  // 2. Only spend an auth round-trip where it matters. Public routes (marketing,
+  // pricing, invite/enroll, API) don't need session validation in middleware, so
+  // skip the Supabase Auth network call entirely — it was adding latency to every
+  // navigation. Sessions still refresh the next time a protected page is hit.
+  const isProtected = isProtectedPath(path);
+  const isAuthRoute = path.startsWith('/login') || path.startsWith('/signup');
+  if (!isProtected && !isAuthRoute) {
+    return response;
+  }
+
   try {
     const supabase = createServerClient<Database>(
       publicEnv.supabaseUrl,
@@ -60,9 +70,6 @@ export async function updateSession(request: NextRequest) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-
-    const isProtected = isProtectedPath(path);
-    const isAuthRoute = path.startsWith('/login') || path.startsWith('/signup');
 
     if (!user && isProtected) {
       const url = request.nextUrl.clone();
