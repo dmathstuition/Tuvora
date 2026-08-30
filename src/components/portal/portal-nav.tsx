@@ -55,10 +55,12 @@ export function PortalSidebar({
   studentId,
   avatarEmoji,
   themeGradient,
+  avatarUrl = null,
 }: {
   studentId?: string;
   avatarEmoji: string;
   themeGradient: string;
+  avatarUrl?: string | null;
 }) {
   const pathname = usePathname();
   return (
@@ -97,11 +99,16 @@ export function PortalSidebar({
         >
           <span
             className={cn(
-              'flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br text-lg ring-2 ring-white',
+              'flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br text-lg ring-2 ring-white',
               themeGradient,
             )}
           >
-            {avatarEmoji}
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              avatarEmoji
+            )}
           </span>
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-brand-900">My profile</p>

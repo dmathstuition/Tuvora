@@ -10,12 +10,14 @@ export function Topbar({
   userName,
   roleLabel,
   permissions,
+  avatarUrl,
 }: {
   orgName?: string;
   userName: string | null;
   roleLabel?: string;
   planLabel?: string;
   permissions: Permission[];
+  avatarUrl?: string | null;
 }) {
   return (
     <header className="glass-nav sticky top-0 z-30 flex h-16 items-center justify-between gap-4 px-4 lg:px-8">
@@ -36,8 +38,13 @@ export function Topbar({
           <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
         </Button>
         <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-900 text-sm font-semibold text-white">
-            {initials(userName ?? 'U')}
+          <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-brand-900 text-sm font-semibold text-white">
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              initials(userName ?? 'U')
+            )}
           </div>
           <div className="hidden leading-tight sm:block">
             <p className="text-sm font-semibold">{userName ?? 'User'}</p>

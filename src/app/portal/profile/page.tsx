@@ -20,17 +20,22 @@ export default async function PortalProfile() {
   const tier = tierFor(points);
 
   return (
-    <PortalShell active="profile" studentId={studentId} avatarEmoji={avatar.emoji} themeGradient={theme.gradient}>
+    <PortalShell active="profile" studentId={studentId} avatarEmoji={avatar.emoji} themeGradient={theme.gradient} avatarUrl={learner.photoUrl}>
       <div className="space-y-6">
         {/* Profile hero */}
         <section className="rounded-3xl bg-gradient-to-br from-brand-700 to-brand-900 p-6 text-center text-white">
           <div
             className={cn(
-              'mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br text-5xl ring-4 ring-white/30',
+              'mx-auto flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br text-5xl ring-4 ring-white/30',
               theme.gradient,
             )}
           >
-            {avatar.emoji}
+            {learner.photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={learner.photoUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              avatar.emoji
+            )}
           </div>
           <h1 className="mt-3 text-2xl font-extrabold">{learner.name}</h1>
           <p className="text-sm text-white/70">{org?.displayName}</p>

@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getAuthContext } from '@/lib/auth/context';
 import { assertCan, can, ForbiddenError } from '@/lib/permissions';
 import { getTrialStatus } from '@/lib/entitlements/service';
+import { uploadPublicImage } from '@/lib/storage/images';
 import { createLearnerSchema } from '@/schemas/learner';
 import type { Database } from '@/types/database.types';
 
@@ -14,7 +15,10 @@ type Learner = Database['public']['Tables']['learners']['Row'];
 export type LearnerBillingBadge = 'trial' | 'paid' | 'unpaid';
 
 export interface LearnerListItem
-  extends Pick<Learner, 'id' | 'first_name' | 'last_name' | 'email' | 'status' | 'enrolled_at'> {
+  extends Pick<
+    Learner,
+    'id' | 'first_name' | 'last_name' | 'email' | 'status' | 'enrolled_at' | 'avatar_url'
+  > {
   billing: LearnerBillingBadge;
   periodEnd: string | null;
 }
@@ -39,7 +43,7 @@ export async function listLearners(page = 1, pageSize = 20): Promise<ListLearner
 
   const { data, count } = await supabase
     .from('learners')
-    .select('id, first_name, last_name, email, status, enrolled_at', { count: 'exact' })
+    .select('id, first_name, last_name, email, status, enrolled_at, avatar_url', { count: 'exact' })
     .eq('organization_id', ctx.organizationId)
     .order('created_at', { ascending: false })
     .range(from, from + pageSize - 1);
@@ -299,6 +303,7 @@ export interface LearnerBasics {
   email: string;
   phone: string;
   status: string;
+  avatarUrl: string | null;
 }
 
 /** Raw editable fields for the edit dialog + delete-eligibility. */
@@ -308,7 +313,7 @@ export async function getLearnerBasics(id: string): Promise<LearnerBasics | null
   const supabase = await createClient();
   const { data } = await supabase
     .from('learners')
-    .select('first_name, last_name, email, phone, status')
+    .select('first_name, last_name, email, phone, status, avatar_url')
     .eq('id', id)
     .eq('organization_id', ctx.organizationId)
     .maybeSingle();
@@ -319,5 +324,52 @@ export async function getLearnerBasics(id: string): Promise<LearnerBasics | null
     email: data.email ?? '',
     phone: data.phone ?? '',
     status: data.status,
+    avatarUrl: data.avatar_url ?? null,
   };
+}
+
+export type AvatarState = { error?: string; success?: boolean };
+
+/** Admin/tutor uploads a learner's profile photo. Shows on their pages + portal. */
+export async function uploadLearnerAvatarAction(
+  _prev: AvatarState,
+  formData: FormData,
+): Promise<AvatarState> {
+  const ctx = await getAuthContext();
+  if (!ctx?.organizationId) return { error: 'No active organization' };
+  try {
+    assertCan(ctx, 'learners.update');
+  } catch (e) {
+    if (e instanceof ForbiddenError) return { error: 'You cannot edit learners.' };
+    throw e;
+  }
+  const id = String(formData.get('id') ?? '');
+  if (!id) return { error: 'Missing learner.' };
+
+  const supabase = await createClient();
+  const { data: learner } = await supabase
+    .from('learners')
+    .select('id')
+    .eq('id', id)
+    .eq('organization_id', ctx.organizationId)
+    .maybeSingle();
+  if (!learner) return { error: 'Learner not found.' };
+
+  const uploaded = await uploadPublicImage(
+    `${ctx.organizationId}/avatars/learner-${id}`,
+    formData.get('image'),
+  );
+  if (uploaded.error || !uploaded.url) return { error: uploaded.error ?? 'Upload failed.' };
+
+  const { error } = await supabase
+    .from('learners')
+    .update({ avatar_url: uploaded.url })
+    .eq('id', id)
+    .eq('organization_id', ctx.organizationId);
+  if (error) return { error: 'Could not save the photo.' };
+
+  revalidatePath('/dashboard/learners');
+  revalidatePath(`/dashboard/learners/${id}`);
+  revalidatePath('/portal', 'layout');
+  return { success: true };
 }

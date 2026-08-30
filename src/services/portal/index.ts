@@ -15,6 +15,7 @@ export interface PortalData {
     firstName: string;
     avatarKey: string;
     themeKey: string;
+    photoUrl: string | null;
   };
   org?: { displayName: string; welcome: string | null };
   points?: number;
@@ -65,7 +66,7 @@ export async function getPortalData(): Promise<PortalData> {
   // 1. Already linked?
   let { data: learner } = await admin
     .from('learners')
-    .select('id, organization_id, first_name, last_name, avatar_key, theme_key')
+    .select('id, organization_id, first_name, last_name, avatar_key, theme_key, avatar_url')
     .eq('user_id', user.id)
     .maybeSingle();
 
@@ -73,7 +74,7 @@ export async function getPortalData(): Promise<PortalData> {
   if (!learner && user.email) {
     const { data: match } = await admin
       .from('learners')
-      .select('id, organization_id, first_name, last_name, avatar_key, theme_key')
+      .select('id, organization_id, first_name, last_name, avatar_key, theme_key, avatar_url')
       .eq('email', user.email)
       .is('user_id', null)
       .limit(1)
@@ -227,6 +228,7 @@ export async function getPortalData(): Promise<PortalData> {
       firstName: learner.first_name,
       avatarKey: learner.avatar_key ?? DEFAULT_AVATAR,
       themeKey: learner.theme_key ?? DEFAULT_THEME,
+      photoUrl: learner.avatar_url ?? null,
     },
     org: { displayName: prefs.displayName ?? org?.name ?? 'My Academy', welcome: prefs.welcome ?? null },
     points: myPoints,

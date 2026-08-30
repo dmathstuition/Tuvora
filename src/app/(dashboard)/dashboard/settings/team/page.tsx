@@ -2,12 +2,12 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { getAuthContext } from '@/lib/auth/context';
-import { listTeam } from '@/services/organizations/members';
+import { listTeam, uploadMemberAvatarAction } from '@/services/organizations/members';
 import { can } from '@/lib/permissions';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
-import { initials } from '@/lib/utils';
+import { AvatarUpload } from '@/components/ui/avatar-upload';
 import { InviteMember } from './invite-member';
 import { MemberActions } from './member-actions';
 
@@ -59,9 +59,14 @@ export default async function TeamPage() {
                 <tr key={m.id} className="border-b last:border-0">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground">
-                        {initials(m.name ?? m.email)}
-                      </div>
+                      <AvatarUpload
+                        action={uploadMemberAvatarAction}
+                        id={m.id}
+                        currentUrl={m.avatarUrl}
+                        name={m.name ?? m.email}
+                        size={40}
+                        canEdit={canManage}
+                      />
                       <div>
                         <p className="font-medium">
                           {m.name ?? m.email}

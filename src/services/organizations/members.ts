@@ -8,6 +8,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { getAuthContext } from '@/lib/auth/context';
 import { assertCan, ForbiddenError } from '@/lib/permissions';
 import { getRequestBaseUrl } from '@/lib/base-url';
+import { uploadPublicImage } from '@/lib/storage/images';
 import { inviteMemberSchema } from '@/schemas/organization';
 import type { OrgRole } from '@/constants/roles';
 
@@ -19,6 +20,7 @@ export interface MemberRow {
   role: OrgRole;
   status: string;
   isSelf: boolean;
+  avatarUrl: string | null;
 }
 export interface PendingInvite {
   id: string;
@@ -41,13 +43,14 @@ export async function listTeam(): Promise<{ members: MemberRow[]; invites: Pendi
     .order('created_at', { ascending: true });
   const rows = members ?? [];
 
-  const profileById = new Map<string, { name: string | null; email: string }>();
+  const profileById = new Map<string, { name: string | null; email: string; avatarUrl: string | null }>();
   if (rows.length > 0) {
     const { data: profiles } = await supabase
       .from('profiles')
-      .select('id, full_name, email')
+      .select('id, full_name, email, avatar_url')
       .in('id', rows.map((m) => m.user_id));
-    for (const p of profiles ?? []) profileById.set(p.id, { name: p.full_name, email: p.email });
+    for (const p of profiles ?? [])
+      profileById.set(p.id, { name: p.full_name, email: p.email, avatarUrl: p.avatar_url });
   }
 
   const canManageInvites = ctx.role === 'owner' || ctx.role === 'admin';
@@ -76,9 +79,61 @@ export async function listTeam(): Promise<{ members: MemberRow[]; invites: Pendi
       role: m.role,
       status: m.status,
       isSelf: m.user_id === ctx.userId,
+      avatarUrl: profileById.get(m.user_id)?.avatarUrl ?? null,
     })),
     invites,
   };
+}
+
+export type MemberAvatarState = { error?: string; success?: boolean };
+
+/**
+ * Admin uploads a team member's profile photo. Writes to the member's profile
+ * via the service role (RLS blocks editing another user's profile), after
+ * confirming the caller may manage members and the target is in this org.
+ */
+export async function uploadMemberAvatarAction(
+  _prev: MemberAvatarState,
+  formData: FormData,
+): Promise<MemberAvatarState> {
+  const ctx = await getAuthContext();
+  if (!ctx?.organizationId) return { error: 'No active organization' };
+  try {
+    assertCan(ctx, 'members.manage');
+  } catch (e) {
+    if (e instanceof ForbiddenError) return { error: 'You cannot manage members.' };
+    throw e;
+  }
+
+  const memberId = String(formData.get('id') ?? '');
+  if (!memberId) return { error: 'Missing member.' };
+
+  const supabase = await createClient();
+  const { data: member } = await supabase
+    .from('organization_members')
+    .select('user_id')
+    .eq('id', memberId)
+    .eq('organization_id', ctx.organizationId)
+    .neq('status', 'removed')
+    .maybeSingle();
+  if (!member) return { error: 'Member not found.' };
+
+  const uploaded = await uploadPublicImage(
+    `${ctx.organizationId}/avatars/member-${member.user_id}`,
+    formData.get('image'),
+  );
+  if (uploaded.error || !uploaded.url) return { error: uploaded.error ?? 'Upload failed.' };
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from('profiles')
+    .update({ avatar_url: uploaded.url })
+    .eq('id', member.user_id);
+  if (error) return { error: 'Could not save the photo.' };
+
+  revalidatePath('/dashboard/settings/team');
+  revalidatePath('/', 'layout');
+  return { success: true };
 }
 
 export type InviteMemberState = { error?: string; url?: string };

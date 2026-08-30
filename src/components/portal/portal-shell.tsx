@@ -16,12 +16,14 @@ export function PortalShell({
   studentId,
   avatarEmoji,
   themeGradient,
+  avatarUrl = null,
   children,
 }: {
   active?: PortalTab;
   studentId?: string;
   avatarEmoji: string;
   themeGradient: string;
+  avatarUrl?: string | null;
   children: React.ReactNode;
 }) {
   return (
@@ -33,7 +35,12 @@ export function PortalShell({
 
       <div className="relative flex">
         {/* Tablet / laptop sidebar */}
-        <PortalSidebar studentId={studentId} avatarEmoji={avatarEmoji} themeGradient={themeGradient} />
+        <PortalSidebar
+          studentId={studentId}
+          avatarEmoji={avatarEmoji}
+          themeGradient={themeGradient}
+          avatarUrl={avatarUrl}
+        />
 
         {/* Content column */}
         <div className="min-w-0 flex-1 pb-24 md:pb-0">
@@ -61,11 +68,16 @@ export function PortalShell({
                   href="/portal/profile"
                   aria-label="Profile"
                   className={cn(
-                    'flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br text-lg ring-2 ring-white md:hidden',
+                    'flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br text-lg ring-2 ring-white md:hidden',
                     themeGradient,
                   )}
                 >
-                  {avatarEmoji}
+                  {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    avatarEmoji
+                  )}
                 </Link>
               </div>
             </div>
