@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { OrgProfileForm, BrandingForm, LogoUpload } from './settings-forms';
 import { StudentAppForm } from './student-app-form';
+import { ChangePasswordForm } from './change-password';
 
 export const metadata: Metadata = { title: 'Settings' };
 
@@ -82,6 +83,16 @@ export default async function SettingsPage() {
         </CardHeader>
         <CardContent>
           <StudentAppForm features={features} disabled={!canBranding} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Security</CardTitle>
+          <CardDescription>Change the password you use to sign in to Tuvora.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChangePasswordForm />
         </CardContent>
       </Card>
     </div>
