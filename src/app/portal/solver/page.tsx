@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Compass } from 'lucide-react';
-import { getPortalData } from '@/services/portal';
+import { getPortalShellData } from '@/services/portal';
 import { avatarFor, themeFor } from '@/constants/gamification';
 import { PortalShell } from '@/components/portal/portal-shell';
 import { SolverForm } from './solver-form';
@@ -9,7 +9,7 @@ import { SolverForm } from './solver-form';
 export const metadata: Metadata = { title: 'Question solver' };
 
 export default async function PortalSolver() {
-  const data = await getPortalData();
+  const data = await getPortalShellData();
   if (!data.linked || !data.learner) redirect('/portal');
   const avatar = avatarFor(data.learner.avatarKey);
   const theme = themeFor(data.learner.themeKey);

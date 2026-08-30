@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { GraduationCap, ArrowRight } from 'lucide-react';
-import { getPortalData } from '@/services/portal';
+import { getPortalShellData } from '@/services/portal';
 import { getMyCertificates } from '@/services/certificates';
 import { CERTIFICATE_TYPES } from '@/constants/certificates';
 import { avatarFor, themeFor } from '@/constants/gamification';
@@ -11,7 +11,7 @@ import { PortalShell } from '@/components/portal/portal-shell';
 export const metadata: Metadata = { title: 'Certificates' };
 
 export default async function PortalCertificates() {
-  const [data, certs] = await Promise.all([getPortalData(), getMyCertificates()]);
+  const [data, certs] = await Promise.all([getPortalShellData(), getMyCertificates()]);
   if (!data.linked || !data.learner) redirect('/portal');
   const avatar = avatarFor(data.learner.avatarKey);
   const theme = themeFor(data.learner.themeKey);

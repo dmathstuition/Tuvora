@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Trophy, Users } from 'lucide-react';
-import { getPortalData } from '@/services/portal';
+import { getPortalShellData } from '@/services/portal';
 import { getLeague } from '@/services/portal/league';
 import { avatarFor, themeFor, tierFor, TIERS } from '@/constants/gamification';
 import { PortalShell } from '@/components/portal/portal-shell';
@@ -19,7 +19,7 @@ const TIER_STYLE: Record<string, string> = {
 };
 
 export default async function PortalLeagues() {
-  const [data, league] = await Promise.all([getPortalData(), getLeague()]);
+  const [data, league] = await Promise.all([getPortalShellData(), getLeague()]);
   if (!data.linked || !data.learner || !league) redirect('/portal');
   const avatar = avatarFor(data.learner.avatarKey);
   const theme = themeFor(data.learner.themeKey);

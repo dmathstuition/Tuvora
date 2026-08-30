@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getUser } from '@/lib/auth/context';
+import { getCurrentLearner } from '@/lib/portal/current-learner';
 import { AVATARS, THEMES, DEFAULT_AVATAR, DEFAULT_THEME } from '@/constants/gamification';
 import { effectiveEnabledFeatures } from '@/lib/portal/feature-flags';
 import { getPlatformFeatureAvailability } from '@/services/portal/features';
@@ -54,6 +55,34 @@ export interface PortalData {
  * tutor created). No cross-tenant access: every query is filtered to the
  * resolved learner and their organization.
  */
+export interface PortalShellData {
+  linked: boolean;
+  learner?: { id: string; name: string; firstName: string; avatarKey: string; themeKey: string; photoUrl: string | null };
+  studentId?: string;
+}
+
+/**
+ * Lightweight data for the portal shell (avatar, theme, student id) — a single
+ * cached learner lookup. Most portal pages only need this; only the home /
+ * progress / profile screens pull the full, heavier getPortalData.
+ */
+export async function getPortalShellData(): Promise<PortalShellData> {
+  const learner = await getCurrentLearner();
+  if (!learner) return { linked: false };
+  return {
+    linked: true,
+    learner: {
+      id: learner.id,
+      name: `${learner.firstName} ${learner.lastName ?? ''}`.trim(),
+      firstName: learner.firstName,
+      avatarKey: learner.avatarKey ?? DEFAULT_AVATAR,
+      themeKey: learner.themeKey ?? DEFAULT_THEME,
+      photoUrl: learner.avatarUrl,
+    },
+    studentId: `TVR-${new Date().getFullYear()}-${learner.id.slice(0, 4).toUpperCase()}`,
+  };
+}
+
 export async function getPortalData(): Promise<PortalData> {
   const user = await getUser();
   if (!user) return { linked: false };

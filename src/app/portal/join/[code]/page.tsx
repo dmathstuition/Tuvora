@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { getPortalData } from '@/services/portal';
+import { getPortalShellData } from '@/services/portal';
 import { getClassByCode } from '@/services/portal/join';
 import { avatarFor, themeFor } from '@/constants/gamification';
 import { PortalShell } from '@/components/portal/portal-shell';
@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: 'Join class' };
 
 export default async function JoinClassPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
-  const [data, preview] = await Promise.all([getPortalData(), getClassByCode(code)]);
+  const [data, preview] = await Promise.all([getPortalShellData(), getClassByCode(code)]);
   if (!data.linked || !data.learner) redirect(`/login?redirect=/portal/join/${code}`);
   const avatar = avatarFor(data.learner.avatarKey);
   const theme = themeFor(data.learner.themeKey);

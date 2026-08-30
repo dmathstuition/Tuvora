@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Sparkles, Wallet as WalletIcon } from 'lucide-react';
-import { getPortalData } from '@/services/portal';
+import { getPortalShellData } from '@/services/portal';
 import { getShopForLearner } from '@/services/rewards/shop';
 import { avatarFor, themeFor } from '@/constants/gamification';
 import { PortalShell } from '@/components/portal/portal-shell';
@@ -19,7 +19,7 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 export default async function PortalShop() {
-  const [data, shop] = await Promise.all([getPortalData(), getShopForLearner()]);
+  const [data, shop] = await Promise.all([getPortalShellData(), getShopForLearner()]);
   if (!data.linked || !data.learner || !shop) redirect('/portal');
   const avatar = avatarFor(data.learner.avatarKey);
   const theme = themeFor(data.learner.themeKey);

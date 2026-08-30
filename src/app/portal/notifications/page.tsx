@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Bell, Sparkles, AlertTriangle, GraduationCap, FileText } from 'lucide-react';
-import { getPortalData } from '@/services/portal';
+import { getPortalShellData } from '@/services/portal';
 import { getMyNotifications, type Notification } from '@/services/portal/extras';
 import { avatarFor, themeFor } from '@/constants/gamification';
 import { relativeTime } from '@/lib/activity';
@@ -19,7 +19,7 @@ const STYLE: Record<Notification['kind'], { icon: typeof Bell; tint: string }> =
 };
 
 export default async function PortalNotifications() {
-  const [data, items] = await Promise.all([getPortalData(), getMyNotifications()]);
+  const [data, items] = await Promise.all([getPortalShellData(), getMyNotifications()]);
   if (!data.linked || !data.learner) redirect('/portal');
   const avatar = avatarFor(data.learner.avatarKey);
   const theme = themeFor(data.learner.themeKey);

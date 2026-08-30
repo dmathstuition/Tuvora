@@ -38,7 +38,7 @@ function trialEndMs(orgCreatedAt: string | null | undefined, sub: TrialSub): num
  * getEntitlements and getTrialStatus. Cached per request so a page that resolves
  * both entitlements AND trial state hits the DB once, not four times.
  */
-const getOrgBilling = cache(async (organizationId: string) => {
+export const getOrgBilling = cache(async (organizationId: string) => {
   const supabase = await createClient();
   const [{ data: org }, { data: sub }] = await Promise.all([
     supabase.from('organizations').select('created_at').eq('id', organizationId).maybeSingle(),

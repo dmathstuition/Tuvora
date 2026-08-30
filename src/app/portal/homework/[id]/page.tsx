@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect, notFound } from 'next/navigation';
 import { ArrowLeft, FileText, Clock, GraduationCap, CheckCircle2, Paperclip } from 'lucide-react';
-import { getPortalData } from '@/services/portal';
+import { getPortalShellData } from '@/services/portal';
 import { getHomeworkDetail } from '@/services/portal/homework';
 import { avatarFor, themeFor } from '@/constants/gamification';
 import { PortalShell } from '@/components/portal/portal-shell';
@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: 'Homework' };
 
 export default async function HomeworkDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [data, hw] = await Promise.all([getPortalData(), getHomeworkDetail(id)]);
+  const [data, hw] = await Promise.all([getPortalShellData(), getHomeworkDetail(id)]);
   if (!data.linked || !data.learner) redirect('/portal');
   if (!hw) notFound();
 
