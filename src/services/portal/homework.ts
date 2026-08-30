@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getCurrentLearner } from '@/lib/portal/current-learner';
 import { uploadAcademyFiles, signAcademyFiles } from '@/lib/storage/files';
+import { sanitizeFormats, type HomeworkFormat } from '@/constants/homework';
 
 const ownLearner = getCurrentLearner;
 
@@ -86,6 +87,7 @@ export interface HomeworkDetail {
   feedback: string | null;
   content: string | null;
   isCbt: boolean;
+  allowedFormats: HomeworkFormat[];
   questionFiles: { id: string; name: string; url: string | null }[];
   myFiles: { id: string; name: string; url: string | null }[];
 }
@@ -105,7 +107,7 @@ export async function getHomeworkDetail(submissionId: string): Promise<HomeworkD
 
   const { data: a } = await admin
     .from('assignments')
-    .select('id, title, instructions, due_at, max_points, class_id, assessment_id')
+    .select('id, title, instructions, due_at, max_points, class_id, assessment_id, allowed_formats')
     .eq('id', sub.assignment_id)
     .maybeSingle();
   if (!a) return null;
@@ -138,6 +140,7 @@ export async function getHomeworkDetail(submissionId: string): Promise<HomeworkD
     feedback: sub.feedback,
     content: sub.content,
     isCbt: !!a.assessment_id,
+    allowedFormats: sanitizeFormats(a.allowed_formats),
     questionFiles: (qFiles ?? []).map((f, i) => ({ id: f.id, name: f.name, url: qSigned[i] ?? null })),
     myFiles: (myFiles ?? []).map((f, i) => ({ id: f.id, name: f.name, url: mySigned[i] ?? null })),
   };

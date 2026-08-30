@@ -18,12 +18,17 @@ export function SubmitHomeworkForm({
   submissionId,
   defaultContent,
   resubmit,
+  allowedFormats,
 }: {
   submissionId: string;
   defaultContent: string | null;
   resubmit: boolean;
+  allowedFormats: string[];
 }) {
-  const [mode, setMode] = useState<Mode>('type');
+  // Only offer the formats the tutor allowed (fall back to all if none set).
+  const modes = MODES.filter((m) => allowedFormats.includes(m.key));
+  const available = modes.length > 0 ? modes : MODES;
+  const [mode, setMode] = useState<Mode>(available[0]?.key ?? 'type');
   const [content, setContent] = useState(defaultContent ?? '');
   const [files, setFiles] = useState<File[]>([]);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -167,7 +172,7 @@ export function SubmitHomeworkForm({
 
       {/* Method picker */}
       <div className="flex flex-wrap gap-2">
-        {MODES.map((m) => {
+        {available.map((m) => {
           if (m.key === 'voice' && !voiceSupported) return null;
           const Icon = m.icon;
           const on = mode === m.key;

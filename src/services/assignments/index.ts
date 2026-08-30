@@ -8,6 +8,7 @@ import { hasFeature } from '@/lib/entitlements/engine';
 import { assertCan, can, ForbiddenError } from '@/lib/permissions';
 import { createAssignmentSchema, gradeSubmissionSchema } from '@/schemas/assignment';
 import { uploadAcademyFiles, signAcademyFiles } from '@/lib/storage/files';
+import { sanitizeFormats } from '@/constants/homework';
 import type { Database } from '@/types/database.types';
 
 type Assignment = Database['public']['Tables']['assignments']['Row'];
@@ -246,6 +247,8 @@ export async function createAssignmentAction(
     return { error: parsed.error.issues[0]?.message ?? 'Please check the form' };
   }
 
+  const allowedFormats = sanitizeFormats(formData.getAll('formats').map(String));
+
   const supabase = await createClient();
   const { data: assignment, error } = await supabase
     .from('assignments')
@@ -255,6 +258,7 @@ export async function createAssignmentAction(
       title: parsed.data.title,
       instructions: parsed.data.instructions || null,
       max_points: parsed.data.maxPoints ?? null,
+      allowed_formats: allowedFormats,
       due_at: parsed.data.dueAt ? new Date(parsed.data.dueAt).toISOString() : null,
       status: 'published',
       created_by: ctx.userId,

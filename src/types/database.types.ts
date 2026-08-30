@@ -455,6 +455,7 @@ export interface Database {
           status: 'draft' | 'published' | 'archived';
           max_points: number | null;
           allow_resubmission: boolean;
+          allowed_formats: string[];
           due_at: string | null;
           assessment_id: string | null;
           created_by: string | null;
@@ -468,6 +469,7 @@ export interface Database {
           status?: 'draft' | 'published' | 'archived';
           max_points?: number | null;
           allow_resubmission?: boolean;
+          allowed_formats?: string[];
           due_at?: string | null;
           assessment_id?: string | null;
           created_by?: string | null;

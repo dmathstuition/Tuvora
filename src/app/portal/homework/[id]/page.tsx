@@ -122,7 +122,12 @@ export default async function HomeworkDetailPage({ params }: { params: Promise<{
                 Submitted — you can still add more or update it until your tutor grades it.
               </p>
             )}
-            <SubmitHomeworkForm submissionId={hw.submissionId} defaultContent={hw.content} resubmit={submitted} />
+            <SubmitHomeworkForm
+              submissionId={hw.submissionId}
+              defaultContent={hw.content}
+              resubmit={submitted}
+              allowedFormats={hw.allowedFormats}
+            />
           </>
         )}
       </div>
