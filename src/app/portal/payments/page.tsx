@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Wallet, Receipt } from 'lucide-react';
-import { getPortalData } from '@/services/portal';
+import { getPortalShellData } from '@/services/portal';
 import { getMyPayments } from '@/services/portal/extras';
 import { avatarFor, themeFor } from '@/constants/gamification';
 import { formatMoney } from '@/lib/utils';
@@ -25,7 +25,7 @@ const PAY_STATUS: Record<string, string> = {
 };
 
 export default async function PortalPayments() {
-  const [data, pay] = await Promise.all([getPortalData(), getMyPayments()]);
+  const [data, pay] = await Promise.all([getPortalShellData(), getMyPayments()]);
   if (!data.linked || !data.learner || !pay) redirect('/portal');
   const avatar = avatarFor(data.learner.avatarKey);
   const theme = themeFor(data.learner.themeKey);

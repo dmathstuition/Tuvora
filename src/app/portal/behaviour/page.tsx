@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Smile, ThumbsUp, AlertTriangle } from 'lucide-react';
-import { getPortalData } from '@/services/portal';
+import { getPortalShellData } from '@/services/portal';
 import { getMyBehaviour } from '@/services/portal/extras';
 import { avatarFor, themeFor } from '@/constants/gamification';
 import { relativeTime } from '@/lib/activity';
@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 export const metadata: Metadata = { title: 'My behaviour' };
 
 export default async function PortalBehaviour() {
-  const [data, b] = await Promise.all([getPortalData(), getMyBehaviour()]);
+  const [data, b] = await Promise.all([getPortalShellData(), getMyBehaviour()]);
   if (!data.linked || !data.learner || !b) redirect('/portal');
   const avatar = avatarFor(data.learner.avatarKey);
   const theme = themeFor(data.learner.themeKey);

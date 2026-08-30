@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { GraduationCap } from 'lucide-react';
-import { getPortalData } from '@/services/portal';
+import { getPortalShellData } from '@/services/portal';
 import { getMyExams } from '@/services/portal/placement';
 import { avatarFor, themeFor } from '@/constants/gamification';
 import { PortalShell } from '@/components/portal/portal-shell';
@@ -10,7 +10,7 @@ import { PortalShell } from '@/components/portal/portal-shell';
 export const metadata: Metadata = { title: 'Mock exams' };
 
 export default async function PortalExams() {
-  const [data, exams] = await Promise.all([getPortalData(), getMyExams()]);
+  const [data, exams] = await Promise.all([getPortalShellData(), getMyExams()]);
   if (!data.linked || !data.learner) redirect('/portal');
   const avatar = avatarFor(data.learner.avatarKey);
   const theme = themeFor(data.learner.themeKey);

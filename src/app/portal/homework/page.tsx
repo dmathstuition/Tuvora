@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { NotebookPen, ClipboardList, CheckCircle2, Clock, ChevronRight } from 'lucide-react';
-import { getPortalData } from '@/services/portal';
+import { getPortalShellData } from '@/services/portal';
 import { getMyHomework } from '@/services/portal/homework';
 import { avatarFor, themeFor } from '@/constants/gamification';
 import { PortalShell } from '@/components/portal/portal-shell';
@@ -19,7 +19,7 @@ const statusStyle: Record<string, { label: string; tint: string }> = {
 };
 
 export default async function PortalHomework() {
-  const [data, homework] = await Promise.all([getPortalData(), getMyHomework()]);
+  const [data, homework] = await Promise.all([getPortalShellData(), getMyHomework()]);
   if (!data.linked || !data.learner) redirect('/portal');
   const avatar = avatarFor(data.learner.avatarKey);
   const theme = themeFor(data.learner.themeKey);

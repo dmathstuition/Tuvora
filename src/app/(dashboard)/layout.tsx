@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getAuthContext, getProfile } from '@/lib/auth/context';
 import { isLinkedLearner } from '@/lib/auth/routing';
 import { listPermissions } from '@/lib/permissions';
-import { getTrialStatus } from '@/lib/entitlements/service';
+import { getTrialStatus, getOrgBilling } from '@/lib/entitlements/service';
 import { Sidebar } from '@/components/dashboard/sidebar';
 import { Topbar } from '@/components/dashboard/topbar';
 import { TrialBanner } from '@/components/dashboard/trial-banner';
@@ -22,22 +22,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   const supabase = await createClient();
-  const [{ data: org }, profile, { data: sub }, trialStatus] = await Promise.all([
+  // `billing` is the request-cached org+subscription fetch shared with
+  // getTrialStatus/getEntitlements, so the layout adds no extra billing queries.
+  const [{ data: org }, profile, trialStatus, billing] = await Promise.all([
     supabase
       .from('organizations')
       .select('name, logo_url, onboarding_completed_at')
       .eq('id', ctx.organizationId)
       .single(),
     getProfile(),
-    supabase
-      .from('subscriptions')
-      .select('status, plan_id')
-      .eq('organization_id', ctx.organizationId)
-      .in('status', ['trialing', 'active', 'past_due', 'paused'])
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
     getTrialStatus(ctx.organizationId),
+    getOrgBilling(ctx.organizationId),
   ]);
 
   // A draft org exists during onboarding — keep the user in the wizard (which
@@ -45,11 +40,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (org && !org.onboarding_completed_at) redirect('/onboarding');
 
   let planName: string | undefined;
-  if (sub?.plan_id) {
+  if (trialStatus.state === 'active' && billing.sub?.plan_id) {
     const { data: plan } = await supabase
       .from('subscription_plans')
       .select('name')
-      .eq('id', sub.plan_id)
+      .eq('id', billing.sub.plan_id)
       .maybeSingle();
     planName = plan?.name;
   }

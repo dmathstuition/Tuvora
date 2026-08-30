@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Layers, ArrowRight } from 'lucide-react';
-import { getPortalData } from '@/services/portal';
+import { getPortalShellData } from '@/services/portal';
 import { getDecksForLearner } from '@/services/revision';
 import { avatarFor, themeFor } from '@/constants/gamification';
 import { PortalShell } from '@/components/portal/portal-shell';
@@ -10,7 +10,7 @@ import { PortalShell } from '@/components/portal/portal-shell';
 export const metadata: Metadata = { title: 'Revision cards' };
 
 export default async function PortalRevision() {
-  const [data, decks] = await Promise.all([getPortalData(), getDecksForLearner()]);
+  const [data, decks] = await Promise.all([getPortalShellData(), getDecksForLearner()]);
   if (!data.linked || !data.learner) redirect('/portal');
   const avatar = avatarFor(data.learner.avatarKey);
   const theme = themeFor(data.learner.themeKey);

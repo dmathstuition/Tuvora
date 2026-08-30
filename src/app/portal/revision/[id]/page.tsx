@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { getPortalData } from '@/services/portal';
+import { getPortalShellData } from '@/services/portal';
 import { getDeckForLearner } from '@/services/revision';
 import { avatarFor, themeFor } from '@/constants/gamification';
 import { PortalShell } from '@/components/portal/portal-shell';
@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: 'Revision deck' };
 
 export default async function PortalRevisionDeck({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [data, deck] = await Promise.all([getPortalData(), getDeckForLearner(id)]);
+  const [data, deck] = await Promise.all([getPortalShellData(), getDeckForLearner(id)]);
   if (!data.linked || !data.learner) redirect('/portal');
   if (!deck) notFound();
   const avatar = avatarFor(data.learner.avatarKey);

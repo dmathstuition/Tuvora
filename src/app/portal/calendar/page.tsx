@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { CalendarDays, BookOpen, ListChecks, Video } from 'lucide-react';
-import { getPortalData } from '@/services/portal';
+import { getPortalShellData } from '@/services/portal';
 import { getMyCalendar } from '@/services/portal/extras';
 import { avatarFor, themeFor } from '@/constants/gamification';
 import { PortalShell } from '@/components/portal/portal-shell';
@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 export const metadata: Metadata = { title: 'Calendar' };
 
 export default async function PortalCalendar() {
-  const [data, items] = await Promise.all([getPortalData(), getMyCalendar()]);
+  const [data, items] = await Promise.all([getPortalShellData(), getMyCalendar()]);
   if (!data.linked || !data.learner) redirect('/portal');
   const avatar = avatarFor(data.learner.avatarKey);
   const theme = themeFor(data.learner.themeKey);

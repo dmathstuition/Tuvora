@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { getPortalData } from '@/services/portal';
+import { getPortalShellData } from '@/services/portal';
 import { avatarFor, themeFor } from '@/constants/gamification';
 import { PortalShell } from '@/components/portal/portal-shell';
 import { GameEngine } from '@/components/portal/game-engine';
@@ -10,7 +10,7 @@ import { GameEngine } from '@/components/portal/game-engine';
 export const metadata: Metadata = { title: 'Practice' };
 
 export default async function PracticeGame() {
-  const data = await getPortalData();
+  const data = await getPortalShellData();
   if (!data.linked || !data.learner) redirect('/portal');
   const avatar = avatarFor(data.learner.avatarKey);
   const theme = themeFor(data.learner.themeKey);
