@@ -78,6 +78,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             roleLabel={ctx.role ?? undefined}
             planLabel={planLabel}
             permissions={permissions}
+            avatarUrl={profile?.avatar_url ?? null}
           />
         </div>
         <div className="print:hidden">

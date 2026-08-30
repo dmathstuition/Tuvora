@@ -9,7 +9,7 @@ import { can } from '@/lib/permissions';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
-import { formatMoney } from '@/lib/utils';
+import { formatMoney, initials } from '@/lib/utils';
 import { AddLearnerButton } from './add-learner';
 import { ActivateLearner } from './activate-learner';
 
@@ -78,7 +78,15 @@ export default async function LearnersPage() {
                   return (
                     <tr key={l.id} className="border-b last:border-0 hover:bg-muted/40">
                       <td className="px-4 py-3 font-medium">
-                        <Link href={`/dashboard/learners/${l.id}`} className="hover:underline">
+                        <Link href={`/dashboard/learners/${l.id}`} className="flex items-center gap-3 hover:underline">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-900 text-xs font-semibold text-white">
+                            {l.avatar_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={l.avatar_url} alt="" className="h-full w-full object-cover" />
+                            ) : (
+                              initials(`${l.first_name} ${l.last_name ?? ''}`)
+                            )}
+                          </span>
                           {l.first_name} {l.last_name}
                         </Link>
                       </td>

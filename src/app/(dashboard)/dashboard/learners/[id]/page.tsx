@@ -23,10 +23,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CreateDialog } from '@/components/ui/create-dialog';
 import { ConfirmButton } from '@/components/ui/confirm-button';
+import { AvatarUpload } from '@/components/ui/avatar-upload';
+import { uploadLearnerAvatarAction } from '@/services/learners';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { PerformanceChart } from '@/components/dashboard/performance-chart';
 import { EmptyState } from '@/components/ui/empty-state';
-import { initials } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Learner' };
 
@@ -73,9 +74,14 @@ export default async function LearnerProfilePage({
         </Link>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-900 text-base font-semibold text-white">
-              {initials(learner.name)}
-            </div>
+            <AvatarUpload
+              action={uploadLearnerAvatarAction}
+              id={learner.id}
+              currentUrl={basics?.avatarUrl ?? null}
+              name={learner.name}
+              size={56}
+              canEdit={canManageLearner}
+            />
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-bold tracking-tight">{learner.name}</h1>

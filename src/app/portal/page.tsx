@@ -102,7 +102,7 @@ export default async function PortalHome() {
   const questsDone = questList.filter((q) => q.done >= q.total).length;
 
   return (
-    <PortalShell active="home" studentId={studentId} avatarEmoji={avatar.emoji} themeGradient={theme.gradient}>
+    <PortalShell active="home" studentId={studentId} avatarEmoji={avatar.emoji} themeGradient={theme.gradient} avatarUrl={learner.photoUrl}>
       <div className="space-y-6">
         {/* Today's Focus hero */}
         <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-brand-600 via-violet-600 to-fuchsia-600 p-6 text-white shadow-xl shadow-violet-500/20">
@@ -124,11 +124,16 @@ export default async function PortalHome() {
             </div>
             <div
               className={cn(
-                'hidden h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-4xl ring-4 ring-white/40 sm:flex',
+                'hidden h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br text-4xl ring-4 ring-white/40 sm:flex',
                 theme.gradient,
               )}
             >
-              {avatar.emoji}
+              {learner.photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={learner.photoUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                avatar.emoji
+              )}
             </div>
           </div>
           <div className="relative mt-4 flex flex-wrap items-center gap-2">

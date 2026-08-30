@@ -39,8 +39,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <Bell className="h-4 w-4" />
             </Button>
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-900 text-sm font-semibold text-white">
-                {initials(profile?.full_name ?? profile?.email ?? 'A')}
+              <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-brand-900 text-sm font-semibold text-white">
+                {profile?.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  initials(profile?.full_name ?? profile?.email ?? 'A')
+                )}
               </div>
               <div className="hidden leading-tight sm:block">
                 <p className="text-sm font-semibold">{profile?.full_name ?? 'Admin'}</p>
