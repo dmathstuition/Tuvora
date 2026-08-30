@@ -1,23 +1,10 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getCurrentLearner } from '@/lib/portal/current-learner';
 
-async function ownLearner(): Promise<{ id: string; organizationId: string } | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-  const admin = createAdminClient();
-  const { data } = await admin
-    .from('learners')
-    .select('id, organization_id')
-    .eq('user_id', user.id)
-    .maybeSingle();
-  return data ? { id: data.id, organizationId: data.organization_id } : null;
-}
+const ownLearner = getCurrentLearner;
 
 export interface JoinPreview {
   valid: boolean;

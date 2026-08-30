@@ -34,6 +34,27 @@ function trialEndMs(orgCreatedAt: string | null | undefined, sub: TrialSub): num
 }
 
 /**
+ * One org-billing fetch (org creation date + latest live subscription) shared by
+ * getEntitlements and getTrialStatus. Cached per request so a page that resolves
+ * both entitlements AND trial state hits the DB once, not four times.
+ */
+const getOrgBilling = cache(async (organizationId: string) => {
+  const supabase = await createClient();
+  const [{ data: org }, { data: sub }] = await Promise.all([
+    supabase.from('organizations').select('created_at').eq('id', organizationId).maybeSingle(),
+    supabase
+      .from('subscriptions')
+      .select('plan_id, status, trial_ends_at')
+      .eq('organization_id', organizationId)
+      .in('status', ['trialing', 'active', 'past_due', 'paused'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+  return { createdAt: org?.created_at ?? null, sub };
+});
+
+/**
  * Loads an organization's live entitlement set from its active subscription's
  * plan. This is the DB-backed bridge to the pure engine in ./engine.
  *
@@ -45,31 +66,23 @@ function trialEndMs(orgCreatedAt: string | null | undefined, sub: TrialSub): num
  */
 export const getEntitlements = cache(
   async (organizationId: string): Promise<EntitlementSet> => {
-    const supabase = await createClient();
-
-    const [{ data: org }, { data: sub }] = await Promise.all([
-      supabase.from('organizations').select('created_at').eq('id', organizationId).maybeSingle(),
-      supabase
-        .from('subscriptions')
-        .select('plan_id, status, trial_ends_at')
-        .eq('organization_id', organizationId)
-        .in('status', ['trialing', 'active', 'past_due', 'paused'])
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-    ]);
+    const { createdAt, sub } = await getOrgBilling(organizationId);
 
     // A genuinely paid plan takes precedence over any trial window.
     if (sub && (sub.status === 'active' || sub.status === 'paused')) {
+      const supabase = await createClient();
       return resolvePlanEntitlements(supabase, sub.plan_id);
     }
 
     // The free trial unlocks EVERY feature for 14 days from sign-up — no numeric
     // limits, nothing held back — even before any plan is chosen or seeded. Once
     // the window closes the org falls back to its plan (or nothing).
-    if (Date.now() < trialEndMs(org?.created_at, sub)) return { ...TRIAL_ENTITLEMENTS };
+    if (Date.now() < trialEndMs(createdAt, sub)) return { ...TRIAL_ENTITLEMENTS };
 
-    if (sub) return resolvePlanEntitlements(supabase, sub.plan_id);
+    if (sub) {
+      const supabase = await createClient();
+      return resolvePlanEntitlements(supabase, sub.plan_id);
+    }
     return {};
   },
 );
@@ -105,18 +118,7 @@ export interface TrialStatus {
  * (nothing flips it server-side until a plan is chosen).
  */
 export const getTrialStatus = cache(async (organizationId: string): Promise<TrialStatus> => {
-  const supabase = await createClient();
-  const [{ data: org }, { data: sub }] = await Promise.all([
-    supabase.from('organizations').select('created_at').eq('id', organizationId).maybeSingle(),
-    supabase
-      .from('subscriptions')
-      .select('status, trial_ends_at')
-      .eq('organization_id', organizationId)
-      .in('status', ['trialing', 'active', 'past_due', 'paused'])
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-  ]);
+  const { createdAt, sub } = await getOrgBilling(organizationId);
 
   // A paid plan wins over any trial window.
   if (sub && (sub.status === 'active' || sub.status === 'paused')) {
@@ -125,7 +127,7 @@ export const getTrialStatus = cache(async (organizationId: string): Promise<Tria
 
   // The 14-day trial runs from account creation (or the subscription's own trial
   // end, whichever is later), independent of whether a plan exists.
-  const end = trialEndMs(org?.created_at, sub);
+  const end = trialEndMs(createdAt, sub);
   const now = Date.now();
   if (end && now < end) {
     const daysLeft = Math.max(1, Math.ceil((end - now) / DAY_MS));
