@@ -435,6 +435,7 @@ export interface Database {
           max_points: number | null;
           allow_resubmission: boolean;
           due_at: string | null;
+          assessment_id: string | null;
           created_by: string | null;
         } & Timestamps;
         Insert: {
@@ -447,6 +448,7 @@ export interface Database {
           max_points?: number | null;
           allow_resubmission?: boolean;
           due_at?: string | null;
+          assessment_id?: string | null;
           created_by?: string | null;
         } & Record<string, unknown>;
         Update: Record<string, unknown>;
@@ -459,6 +461,7 @@ export interface Database {
           assignment_id: string;
           learner_id: string;
           status: 'assigned' | 'submitted' | 'late' | 'graded' | 'returned';
+          submission_type: string;
           content: string | null;
           submitted_at: string | null;
           score: number | null;
@@ -472,6 +475,55 @@ export interface Database {
           assignment_id: string;
           learner_id: string;
           status?: 'assigned' | 'submitted' | 'late' | 'graded' | 'returned';
+          submission_type?: string;
+        } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      assignment_files: {
+        Row: {
+          id: string;
+          organization_id: string;
+          assignment_id: string;
+          path: string;
+          name: string;
+          mime_type: string | null;
+          size_bytes: number | null;
+          uploaded_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          organization_id: string;
+          assignment_id: string;
+          path: string;
+          name: string;
+          mime_type?: string | null;
+          size_bytes?: number | null;
+          uploaded_by?: string | null;
+        } & Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      submission_files: {
+        Row: {
+          id: string;
+          organization_id: string;
+          submission_id: string;
+          learner_id: string;
+          path: string;
+          name: string;
+          mime_type: string | null;
+          size_bytes: number | null;
+          created_at: string;
+        };
+        Insert: {
+          organization_id: string;
+          submission_id: string;
+          learner_id: string;
+          path: string;
+          name: string;
+          mime_type?: string | null;
+          size_bytes?: number | null;
         } & Record<string, unknown>;
         Update: Record<string, unknown>;
         Relationships: [];

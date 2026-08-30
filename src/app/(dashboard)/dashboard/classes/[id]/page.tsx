@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Users, Video } from 'lucide-react';
+import { ArrowLeft, Users, Video, CalendarCheck, NotebookPen } from 'lucide-react';
 import { CalendarClock } from 'lucide-react';
+import { AddAssignmentButton } from '../../assignments/add-assignment';
 import { getClassDetail, updateClassAction, deleteClassAction } from '@/services/classes';
 import { listClassSessions, scheduleClassSessionAction, deleteEventAction } from '@/services/calendar';
 import { getRequestBaseUrl } from '@/lib/base-url';
@@ -36,6 +37,7 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ id
   const joinUrl = joinCode ? `${await getRequestBaseUrl()}/portal/join/${joinCode}` : null;
   const sessions = await listClassSessions(id);
   const now = Date.now();
+  const today = new Date().toISOString().slice(0, 10);
 
   return (
     <div className="space-y-6">
@@ -109,6 +111,30 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ id
         )}
       </div>
 
+      {/* Quick actions — take attendance / set homework without leaving the class. */}
+      {canManage && (
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href={`/dashboard/attendance?classId=${klass.id}&date=${today}`}
+            className="inline-flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm font-medium shadow-xs hover:bg-muted"
+          >
+            <CalendarCheck className="h-4 w-4 text-brand-600" /> Take attendance
+          </Link>
+          <AddAssignmentButton
+            classes={[{ id: klass.id, name: klass.name }]}
+            defaultClassId={klass.id}
+            triggerLabel="Set homework"
+            triggerVariant="outline"
+          />
+          <Link
+            href={`/dashboard/assignments?classId=${klass.id}`}
+            className="inline-flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm font-medium shadow-xs hover:bg-muted"
+          >
+            <NotebookPen className="h-4 w-4 text-brand-600" /> View homework
+          </Link>
+        </div>
+      )}
+
       {/* Scheduled sessions */}
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0">
@@ -160,6 +186,14 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ id
                         className="inline-flex items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-2.5 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-100"
                       >
                         <Video className="h-3.5 w-3.5" /> Join
+                      </Link>
+                    )}
+                    {canManage && (
+                      <Link
+                        href={`/dashboard/attendance?classId=${klass.id}&date=${new Date(s.startsAt).toISOString().slice(0, 10)}`}
+                        className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"
+                      >
+                        <CalendarCheck className="h-3.5 w-3.5" /> Attendance
                       </Link>
                     )}
                     {canManage && (

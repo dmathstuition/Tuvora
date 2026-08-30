@@ -7,6 +7,7 @@ import { getEntitlements } from '@/lib/entitlements/service';
 import { hasFeature } from '@/lib/entitlements/engine';
 import { assertCan, can, ForbiddenError } from '@/lib/permissions';
 import { createAssignmentSchema, gradeSubmissionSchema } from '@/schemas/assignment';
+import { uploadAcademyFiles, signAcademyFiles } from '@/lib/storage/files';
 import type { Database } from '@/types/database.types';
 
 type Assignment = Database['public']['Tables']['assignments']['Row'];
@@ -89,15 +90,24 @@ export async function listAssignments(): Promise<AssignmentListItem[]> {
   }));
 }
 
+export interface AttachedFile {
+  id: string;
+  name: string;
+  url: string | null;
+}
+
 export interface SubmissionWithLearner
   extends Pick<Submission, 'id' | 'status' | 'score' | 'feedback' | 'submitted_at'> {
   learner_id: string;
   learner_name: string;
+  content: string | null;
+  files: AttachedFile[];
 }
 
 export interface AssignmentDetail {
   assignment: Pick<Assignment, 'id' | 'title' | 'instructions' | 'status' | 'due_at' | 'max_points'>;
   className: string | null;
+  questionFiles: AttachedFile[];
   submissions: SubmissionWithLearner[];
   canGrade: boolean;
 }
@@ -126,11 +136,19 @@ export async function getAssignmentDetail(id: string): Promise<AssignmentDetail 
     className = cls?.name ?? null;
   }
 
-  const { data: subs } = await supabase
-    .from('assignment_submissions')
-    .select('id, status, score, feedback, submitted_at, learner_id')
-    .eq('assignment_id', id)
-    .eq('organization_id', ctx.organizationId);
+  const [{ data: subs }, { data: qFiles }] = await Promise.all([
+    supabase
+      .from('assignment_submissions')
+      .select('id, status, score, feedback, submitted_at, learner_id, content')
+      .eq('assignment_id', id)
+      .eq('organization_id', ctx.organizationId),
+    supabase
+      .from('assignment_files')
+      .select('id, name, path')
+      .eq('assignment_id', id)
+      .eq('organization_id', ctx.organizationId)
+      .order('created_at'),
+  ]);
 
   const learnerIds = [...new Set((subs ?? []).map((s) => s.learner_id))];
   const names = new Map<string, string>();
@@ -144,9 +162,34 @@ export async function getAssignmentDetail(id: string): Promise<AssignmentDetail 
     }
   }
 
+  // Submission files, grouped per submission.
+  const submissionIds = (subs ?? []).map((s) => s.id);
+  const filesBySubmission = new Map<string, { id: string; name: string; path: string }[]>();
+  if (submissionIds.length > 0) {
+    const { data: sFiles } = await supabase
+      .from('submission_files')
+      .select('id, name, path, submission_id')
+      .in('submission_id', submissionIds)
+      .eq('organization_id', ctx.organizationId);
+    for (const f of sFiles ?? []) {
+      const arr = filesBySubmission.get(f.submission_id) ?? [];
+      arr.push({ id: f.id, name: f.name, path: f.path });
+      filesBySubmission.set(f.submission_id, arr);
+    }
+  }
+
+  // Sign every path in one batch.
+  const allPaths = [
+    ...(qFiles ?? []).map((f) => f.path),
+    ...[...filesBySubmission.values()].flat().map((f) => f.path),
+  ];
+  const signed = await signAcademyFiles(allPaths);
+  const urlByPath = new Map(allPaths.map((p, i) => [p, signed[i] ?? null]));
+
   return {
     assignment,
     className,
+    questionFiles: (qFiles ?? []).map((f) => ({ id: f.id, name: f.name, url: urlByPath.get(f.path) ?? null })),
     submissions: (subs ?? []).map((s) => ({
       id: s.id,
       status: s.status,
@@ -155,6 +198,12 @@ export async function getAssignmentDetail(id: string): Promise<AssignmentDetail 
       submitted_at: s.submitted_at,
       learner_id: s.learner_id,
       learner_name: names.get(s.learner_id) ?? 'Learner',
+      content: s.content,
+      files: (filesBySubmission.get(s.id) ?? []).map((f) => ({
+        id: f.id,
+        name: f.name,
+        url: urlByPath.get(f.path) ?? null,
+      })),
     })),
     canGrade: can(ctx, 'assignments.grade'),
   };
@@ -214,6 +263,32 @@ export async function createAssignmentAction(
     .single();
 
   if (error || !assignment) return { error: 'Could not create the assignment.' };
+
+  // Upload any question files/images the tutor attached.
+  const questionFiles = formData.getAll('files');
+  if (questionFiles.length > 0) {
+    try {
+      const stored = await uploadAcademyFiles(
+        `${ctx.organizationId}/assignments/${assignment.id}`,
+        questionFiles,
+      );
+      if (stored.length > 0) {
+        await supabase.from('assignment_files').insert(
+          stored.map((f) => ({
+            organization_id: ctx.organizationId!,
+            assignment_id: assignment.id,
+            path: f.path,
+            name: f.name,
+            mime_type: f.mime,
+            size_bytes: f.size,
+            uploaded_by: ctx.userId,
+          })),
+        );
+      }
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : 'Could not upload the question files.' };
+    }
+  }
 
   // Seed submissions for enrolled learners.
   const { data: members } = await supabase
