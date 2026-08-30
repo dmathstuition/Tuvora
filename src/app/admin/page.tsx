@@ -75,19 +75,24 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-6 pb-4">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Welcome back, {firstName} 👋</h1>
-          <p className="text-sm text-muted-foreground">
-            Here&apos;s what&apos;s happening across Tuvora today.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <RangePicker size="md" />
-          <button className="inline-flex items-center gap-2 rounded-lg border bg-background px-3 py-2 text-sm font-medium hover:bg-accent">
-            <Download className="h-4 w-4" /> Export Report
-          </button>
+      {/* Header — gradient hero */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-800 via-brand-700 to-violet-700 p-6 text-white shadow-lg shadow-brand-900/20 md:p-8">
+        <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-fuchsia-400/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-12 left-24 h-40 w-40 rounded-full bg-sky-400/20 blur-3xl" />
+        <div className="relative flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-white/70">
+              <Sparkles className="h-3.5 w-3.5" /> Platform control centre
+            </p>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight">Welcome back, {firstName} 👋</h1>
+            <p className="mt-1 text-white/80">Here&apos;s what&apos;s happening across Tuvora today.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <RangePicker size="md" />
+            <button className="inline-flex items-center gap-2 rounded-lg border border-white/25 bg-white/10 px-3 py-2 text-sm font-medium text-white backdrop-blur hover:bg-white/20">
+              <Download className="h-4 w-4" /> Export Report
+            </button>
+          </div>
         </div>
       </div>
 

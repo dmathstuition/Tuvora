@@ -223,7 +223,7 @@ export default async function PortalHome() {
               Details <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {progressTiles.map((t) => {
               const Icon = t.icon;
               return (
@@ -249,7 +249,7 @@ export default async function PortalHome() {
               <Sparkles className="h-5 w-5 text-amber-500" /> Play &amp; learn
               <span className="text-sm font-medium text-slate-400">— pick one and go</span>
             </h2>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
               {playFeatures.map((f) => {
                 const Icon = f.icon;
                 const soon = f.status === 'soon';

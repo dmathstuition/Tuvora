@@ -25,7 +25,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="flex h-screen overflow-hidden">
       <AdminSidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-16 items-center justify-between gap-4 border-b bg-background px-4 lg:px-8">
+        <header className="glass-nav sticky top-0 z-30 flex h-16 items-center justify-between gap-4 px-4 lg:px-8">
           <AdminMobileNav />
           <div className="relative hidden max-w-md flex-1 md:block">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -56,7 +56,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </div>
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto bg-muted/20 p-4 lg:p-8">{children}</main>
+        <main className="flex-1 overflow-y-auto bg-gradient-to-br from-brand-50/50 via-muted/20 to-accent/20 p-4 lg:p-8">
+          {children}
+        </main>
       </div>
     </div>
   );
