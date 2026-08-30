@@ -5,7 +5,7 @@ import { siteConfig } from '@/config/site';
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur">
+    <header className="glass-nav sticky top-0 z-40 w-full">
       <div className="container flex h-16 items-center justify-between">
         <Link href="/" aria-label="Tuvora home">
           <Logo />

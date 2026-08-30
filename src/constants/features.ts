@@ -7,7 +7,6 @@
 export const FEATURE_SLUGS = [
   'learners',
   'classes',
-  'courses',
   'staff',
   'storage',
   'assignments',

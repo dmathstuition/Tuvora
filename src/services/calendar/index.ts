@@ -78,23 +78,30 @@ export interface ClassSession {
   id: string;
   title: string;
   startsAt: string;
+  meetingUrl: string | null;
 }
 
-/** Upcoming + recent scheduled sessions for a single class. */
+/** Upcoming + recent online lessons scheduled for a single class. */
 export async function listClassSessions(classId: string): Promise<ClassSession[]> {
   const ctx = await getAuthContext();
   if (!ctx?.organizationId) return [];
   const supabase = await createClient();
   const { data } = await supabase
     .from('calendar_events')
-    .select('id, title, starts_at')
+    .select('id, title, starts_at, meeting_url')
     .eq('organization_id', ctx.organizationId)
     .eq('class_id', classId)
+    .in('kind', ['lesson', 'class'])
     .order('starts_at', { ascending: true });
-  return (data ?? []).map((e) => ({ id: e.id, title: e.title, startsAt: e.starts_at }));
+  return (data ?? []).map((e) => ({
+    id: e.id,
+    title: e.title,
+    startsAt: e.starts_at,
+    meetingUrl: e.meeting_url ?? null,
+  }));
 }
 
-/** Schedule a session/lesson on a class (no course needed). */
+/** Schedule an online lesson on a class (no course needed). */
 export async function scheduleClassSessionAction(
   _prev: EventState,
   formData: FormData,
@@ -104,26 +111,32 @@ export async function scheduleClassSessionAction(
   try {
     assertCan(ctx, 'calendar.manage');
   } catch (e) {
-    if (e instanceof ForbiddenError) return { error: 'You cannot schedule sessions.' };
+    if (e instanceof ForbiddenError) return { error: 'You cannot schedule lessons.' };
     throw e;
   }
   const classId = String(formData.get('classId') ?? '');
   const title = String(formData.get('title') ?? '').trim();
   const startsAt = String(formData.get('startsAt') ?? '');
+  const meetingUrl = String(formData.get('meetingUrl') ?? '').trim();
   if (!classId) return { error: 'Missing class.' };
-  if (title.length < 2) return { error: 'Enter a session title.' };
+  if (title.length < 2) return { error: 'Enter a lesson title.' };
   if (!startsAt) return { error: 'Choose a date/time.' };
+  if (meetingUrl && !/^https?:\/\//i.test(meetingUrl)) {
+    return { error: 'The meeting link must start with http:// or https://' };
+  }
 
   const supabase = await createClient();
   const { error } = await supabase.from('calendar_events').insert({
     organization_id: ctx.organizationId,
     title,
-    kind: 'class',
+    kind: 'lesson',
     class_id: classId,
     starts_at: new Date(startsAt).toISOString(),
+    meeting_url: meetingUrl || null,
   });
-  if (error) return { error: 'Could not schedule the session.' };
+  if (error) return { error: 'Could not schedule the lesson.' };
   revalidatePath(`/dashboard/classes/${classId}`);
+  revalidatePath('/dashboard/lessons');
   revalidatePath('/dashboard/calendar');
   return { success: true };
 }
