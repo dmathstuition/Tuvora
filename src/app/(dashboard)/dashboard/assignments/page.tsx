@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { FileText } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import { getAuthContext } from '@/lib/auth/context';
-import { listAssignments, getClassOptions } from '@/services/assignments';
+import { listAssignments, getClassOptions, getLearnerOptions } from '@/services/assignments';
 import { getEntitlements } from '@/lib/entitlements/service';
 import { hasFeature } from '@/lib/entitlements/engine';
 import { can } from '@/lib/permissions';
@@ -26,14 +26,15 @@ export default async function AssignmentsPage() {
   const organizationId = ctx.organizationId;
   const canManage = can(ctx, 'assignments.manage');
 
-  const [assignments, classes, entitlements] = await Promise.all([
+  const [assignments, classes, learners, entitlements] = await Promise.all([
     listAssignments(),
     canManage ? getClassOptions() : Promise.resolve([]),
+    canManage ? getLearnerOptions() : Promise.resolve([]),
     getEntitlements(organizationId),
   ]);
 
   const featureEnabled = hasFeature(entitlements, 'assignments');
-  const canCreate = canManage && featureEnabled && classes.length > 0;
+  const canCreate = canManage && featureEnabled && (classes.length > 0 || learners.length > 0);
 
   return (
     <div className="space-y-6">
@@ -44,7 +45,7 @@ export default async function AssignmentsPage() {
             Set work for your classes and grade submissions.
           </p>
         </div>
-        {canCreate && <AddAssignmentButton classes={classes} />}
+        {canCreate && <AddAssignmentButton classes={classes} learners={learners} />}
       </div>
 
       {canManage && !featureEnabled && (
@@ -52,9 +53,9 @@ export default async function AssignmentsPage() {
           Assignments aren&apos;t included in your current plan. Upgrade to set and grade work.
         </div>
       )}
-      {canManage && featureEnabled && classes.length === 0 && (
+      {canManage && featureEnabled && classes.length === 0 && learners.length === 0 && (
         <div className="rounded-md border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-          Create a class first — assignments are set for a class.
+          Add a class or a learner first — assignments are set for a class or one learner.
         </div>
       )}
 
@@ -63,7 +64,7 @@ export default async function AssignmentsPage() {
           icon={FileText}
           title="No assignments yet"
           description="Create an assignment for one of your classes to start setting and grading work."
-          action={canCreate ? <AddAssignmentButton classes={classes} /> : undefined}
+          action={canCreate ? <AddAssignmentButton classes={classes} learners={learners} /> : undefined}
         />
       ) : (
         <Card>
