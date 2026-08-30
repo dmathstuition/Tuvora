@@ -3,18 +3,19 @@ import type { LucideIcon } from 'lucide-react';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-/** Soft colour tones for icon tiles across the dashboard widgets. */
+/** Colour tones for icon tiles across the dashboard widgets. */
 export type Tone = 'blue' | 'green' | 'amber' | 'red' | 'purple' | 'indigo' | 'slate' | 'emerald';
 
-const TONE: Record<Tone, { bg: string; fg: string }> = {
-  blue: { bg: 'bg-blue-50', fg: 'text-blue-600' },
-  green: { bg: 'bg-green-50', fg: 'text-green-600' },
-  amber: { bg: 'bg-amber-50', fg: 'text-amber-600' },
-  red: { bg: 'bg-rose-50', fg: 'text-rose-600' },
-  purple: { bg: 'bg-purple-50', fg: 'text-purple-600' },
-  indigo: { bg: 'bg-indigo-50', fg: 'text-indigo-600' },
-  slate: { bg: 'bg-slate-100', fg: 'text-slate-600' },
-  emerald: { bg: 'bg-emerald-50', fg: 'text-emerald-600' },
+/** Gradient chips give the tiles a modern, tactile feel (white icon on top). */
+const TONE: Record<Tone, { grad: string; glow: string }> = {
+  blue: { grad: 'from-blue-500 to-blue-600', glow: 'shadow-blue-500/30' },
+  green: { grad: 'from-emerald-500 to-green-600', glow: 'shadow-emerald-500/30' },
+  amber: { grad: 'from-amber-400 to-orange-500', glow: 'shadow-amber-500/30' },
+  red: { grad: 'from-rose-500 to-red-600', glow: 'shadow-rose-500/30' },
+  purple: { grad: 'from-purple-500 to-fuchsia-600', glow: 'shadow-fuchsia-500/30' },
+  indigo: { grad: 'from-indigo-500 to-violet-600', glow: 'shadow-violet-500/30' },
+  slate: { grad: 'from-slate-500 to-slate-700', glow: 'shadow-slate-500/20' },
+  emerald: { grad: 'from-emerald-500 to-teal-600', glow: 'shadow-teal-500/30' },
 };
 
 export function IconTile({
@@ -29,12 +30,13 @@ export function IconTile({
   return (
     <span
       className={cn(
-        'inline-flex h-10 w-10 items-center justify-center rounded-xl',
-        TONE[tone].bg,
+        'inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-md',
+        TONE[tone].grad,
+        TONE[tone].glow,
         className,
       )}
     >
-      <Icon className={cn('h-5 w-5', TONE[tone].fg)} />
+      <Icon className="h-5 w-5" />
     </span>
   );
 }
@@ -56,27 +58,25 @@ export function StatTile({
   const hasTrend = trendPct != null;
   const up = (trendPct ?? 0) >= 0;
   return (
-    <div className="rounded-2xl border bg-card p-5 shadow-sm">
-      <div className="flex items-start justify-between">
+    <div className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
+      <div className="flex items-start justify-between gap-2">
         <IconTile icon={icon} tone={tone} />
-      </div>
-      <p className="mt-4 text-sm text-muted-foreground">{label}</p>
-      <p className="mt-1 text-2xl font-bold tracking-tight">{value}</p>
-      <p className="mt-1 flex items-center gap-1 text-xs">
-        {hasTrend ? (
+        {hasTrend && (
           <span
             className={cn(
-              'inline-flex items-center gap-0.5 font-semibold',
-              up ? 'text-emerald-600' : 'text-rose-600',
+              'inline-flex items-center gap-0.5 rounded-full px-2 py-1 text-xs font-bold',
+              up ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600',
             )}
           >
             {up ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
             {Math.abs(trendPct as number)}%
           </span>
-        ) : (
-          <span className="font-semibold text-muted-foreground">0%</span>
         )}
-        <span className="text-muted-foreground">vs last month</span>
+      </div>
+      <p className="mt-4 text-sm font-medium text-muted-foreground">{label}</p>
+      <p className="mt-1 text-3xl font-bold tracking-tight text-foreground">{value}</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {hasTrend ? 'vs last month' : 'all time'}
       </p>
     </div>
   );
@@ -99,15 +99,24 @@ export function SectionCard({
   bodyClassName?: string;
 }) {
   return (
-    <section className={cn('flex flex-col rounded-2xl border bg-card shadow-sm', className)}>
-      <header className="flex items-center justify-between gap-3 border-b px-5 py-4">
+    <section
+      className={cn(
+        'flex flex-col rounded-2xl border border-border/60 bg-card shadow-sm transition-shadow duration-300 hover:shadow-md',
+        className,
+      )}
+    >
+      <header className="flex items-center justify-between gap-3 px-5 pb-3 pt-4">
         <h2 className="flex items-center gap-2 text-sm font-semibold">
-          {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
+          {Icon && (
+            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+              <Icon className="h-3.5 w-3.5" />
+            </span>
+          )}
           {title}
         </h2>
         {action}
       </header>
-      <div className={cn('flex-1 p-5', bodyClassName)}>{children}</div>
+      <div className={cn('flex-1 p-5 pt-1', bodyClassName)}>{children}</div>
     </section>
   );
 }
@@ -237,9 +246,9 @@ export function QuickActions({ actions }: { actions: QuickAction[] }) {
           <Link
             key={a.title}
             href={a.href}
-            className="group flex flex-col gap-2 rounded-xl border p-4 transition-colors hover:border-primary/40 hover:bg-accent/50"
+            className="group flex flex-col gap-2 rounded-xl border border-border/60 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
           >
-            <IconTile icon={Icon} tone={a.tone ?? 'indigo'} />
+            <IconTile icon={Icon} tone={a.tone ?? 'indigo'} className="transition-transform duration-300 group-hover:scale-110" />
             <div>
               <p className="text-sm font-semibold">{a.title}</p>
               <p className="text-xs text-muted-foreground">{a.subtitle}</p>
