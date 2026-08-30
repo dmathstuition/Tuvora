@@ -45,11 +45,9 @@ export const PERMISSIONS = [
   // Parents
   'parents.view',
   'parents.manage',
-  // Classes / courses / lessons
+  // Classes / online lessons
   'classes.view',
   'classes.manage',
-  'courses.view',
-  'courses.manage',
   'lessons.view',
   'lessons.manage',
   // Assignments & assessments
@@ -114,8 +112,6 @@ export const ROLE_PERMISSIONS: Record<OrgRole, readonly Permission[] | '*'> = {
     'parents.manage',
     'classes.view',
     'classes.manage',
-    'courses.view',
-    'courses.manage',
     'lessons.view',
     'lessons.manage',
     'assignments.view',
@@ -152,8 +148,6 @@ export const ROLE_PERMISSIONS: Record<OrgRole, readonly Permission[] | '*'> = {
     'parents.view',
     'classes.view',
     'classes.manage',
-    'courses.view',
-    'courses.manage',
     'lessons.view',
     'lessons.manage',
     'assignments.view',

@@ -370,6 +370,7 @@ export interface Database {
           start_date: string | null;
           end_date: string | null;
           join_code: string | null;
+          meeting_url: string | null;
         } & Timestamps;
         Insert: {
           organization_id: string;
@@ -382,6 +383,7 @@ export interface Database {
           start_date?: string | null;
           end_date?: string | null;
           join_code?: string | null;
+          meeting_url?: string | null;
         } & Record<string, unknown>;
         Update: Record<string, unknown>;
         Relationships: [];
@@ -644,45 +646,6 @@ export interface Database {
         Update: Record<string, unknown>;
         Relationships: [];
       };
-      courses: {
-        Row: {
-          id: string;
-          organization_id: string;
-          subject_id: string | null;
-          title: string;
-          description: string | null;
-          level: string | null;
-          cover_image_url: string | null;
-          status: 'draft' | 'published' | 'archived';
-          created_by: string | null;
-        } & Timestamps;
-        Insert: { organization_id: string; title: string } & Record<string, unknown>;
-        Update: Record<string, unknown>;
-        Relationships: [];
-      };
-      course_modules: {
-        Row: { id: string; organization_id: string; course_id: string; title: string; position: number; created_at: string };
-        Insert: { organization_id: string; course_id: string; title: string; position?: number };
-        Update: Record<string, unknown>;
-        Relationships: [];
-      };
-      lessons: {
-        Row: {
-          id: string;
-          organization_id: string;
-          module_id: string | null;
-          class_id: string | null;
-          title: string;
-          description: string | null;
-          content: Json | null;
-          video_url: string | null;
-          objectives: string[] | null;
-          position: number;
-        } & Timestamps;
-        Insert: { organization_id: string; title: string } & Record<string, unknown>;
-        Update: Record<string, unknown>;
-        Relationships: [];
-      };
       resources: {
         Row: {
           id: string;
@@ -810,9 +773,11 @@ export interface Database {
           title: string;
           kind: string;
           class_id: string | null;
+          learner_id: string | null;
           starts_at: string;
           ends_at: string | null;
           all_day: boolean;
+          meeting_url: string | null;
           metadata: Json;
           created_at: string;
         };

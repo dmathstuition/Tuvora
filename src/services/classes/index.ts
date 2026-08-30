@@ -109,6 +109,7 @@ export async function createClassAction(
     description: formData.get('description') || '',
     mode: (formData.get('mode') as string) || 'group',
     capacity: formData.get('capacity') || undefined,
+    meetingUrl: formData.get('meetingUrl') || '',
     startDate: formData.get('startDate') || '',
     status: 'active',
   });
@@ -136,6 +137,7 @@ export async function createClassAction(
     start_date: parsed.data.startDate || null,
     status: parsed.data.status,
     join_code: joinCode,
+    meeting_url: parsed.data.meetingUrl || null,
   });
 
   if (error) return { error: 'Could not create the class. Please try again.' };
@@ -167,7 +169,7 @@ export interface EnrolledLearner {
 export interface ClassDetail {
   klass: Pick<
     ClassRow,
-    'id' | 'name' | 'description' | 'mode' | 'status' | 'capacity' | 'start_date' | 'end_date'
+    'id' | 'name' | 'description' | 'mode' | 'status' | 'capacity' | 'start_date' | 'end_date' | 'meeting_url'
   >;
   joinCode: string | null;
   enrolled: EnrolledLearner[];
@@ -184,7 +186,7 @@ export async function getClassDetail(id: string): Promise<ClassDetail | null> {
 
   const { data: klass } = await supabase
     .from('classes')
-    .select('id, name, description, mode, status, capacity, start_date, end_date, join_code')
+    .select('id, name, description, mode, status, capacity, start_date, end_date, join_code, meeting_url')
     .eq('id', id)
     .eq('organization_id', ctx.organizationId)
     .maybeSingle();
@@ -380,6 +382,7 @@ export async function updateClassAction(
     description: formData.get('description') || '',
     mode: (formData.get('mode') as string) || 'group',
     capacity: formData.get('capacity') || undefined,
+    meetingUrl: formData.get('meetingUrl') || '',
     startDate: formData.get('startDate') || '',
     status: (formData.get('status') as string) || 'active',
   });
@@ -395,6 +398,7 @@ export async function updateClassAction(
       capacity: parsed.data.capacity ?? null,
       start_date: parsed.data.startDate || null,
       status: parsed.data.status,
+      meeting_url: parsed.data.meetingUrl || null,
     })
     .eq('id', id)
     .eq('organization_id', ctx.organizationId);

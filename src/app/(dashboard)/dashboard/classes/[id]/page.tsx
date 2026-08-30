@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Users } from 'lucide-react';
+import { ArrowLeft, Users, Video } from 'lucide-react';
 import { CalendarClock } from 'lucide-react';
 import { getClassDetail, updateClassAction, deleteClassAction } from '@/services/classes';
 import { listClassSessions, scheduleClassSessionAction, deleteEventAction } from '@/services/calendar';
@@ -74,6 +74,7 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ id
                     ],
                   },
                   { name: 'capacity', label: 'Capacity', type: 'number', defaultValue: klass.capacity ? String(klass.capacity) : '' },
+                  { name: 'meetingUrl', label: 'Online meeting link', placeholder: 'https://meet.google.com/… or Zoom link', defaultValue: klass.meeting_url ?? '' },
                   { name: 'startDate', label: 'Start date', type: 'date', defaultValue: klass.start_date ? klass.start_date.slice(0, 10) : '' },
                   {
                     name: 'status',
@@ -125,8 +126,9 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ id
               submitLabel="Schedule"
               hidden={{ classId: klass.id }}
               fields={[
-                { name: 'title', label: 'Session title', required: true, placeholder: 'Week 1 — Fractions' },
+                { name: 'title', label: 'Lesson title', required: true, placeholder: 'Week 1 — Fractions' },
                 { name: 'startsAt', label: 'Date & time', type: 'datetime-local', required: true },
+                { name: 'meetingUrl', label: 'Meeting link (optional)', placeholder: klass.meeting_url ?? 'https://meet.google.com/…' },
               ]}
             />
           )}
@@ -150,6 +152,16 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ id
                         {past && ' · past'}
                       </p>
                     </div>
+                    {(s.meetingUrl ?? klass.meeting_url) && (
+                      <Link
+                        href={(s.meetingUrl ?? klass.meeting_url) as string}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-2.5 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-100"
+                      >
+                        <Video className="h-3.5 w-3.5" /> Join
+                      </Link>
+                    )}
                     {canManage && (
                       <form action={deleteEventAction}>
                         <input type="hidden" name="id" value={s.id} />

@@ -18,12 +18,12 @@ export function Topbar({
   permissions: Permission[];
 }) {
   return (
-    <header className="flex h-16 items-center justify-between gap-4 border-b bg-background px-4 lg:px-8">
+    <header className="glass-nav sticky top-0 z-30 flex h-16 items-center justify-between gap-4 px-4 lg:px-8">
       <DashboardMobileNav permissions={permissions} />
       <div className="relative hidden max-w-md flex-1 md:block">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
-          placeholder="Search learners, classes, courses…"
+          placeholder="Search learners, classes, lessons…"
           className="h-10 w-full rounded-lg border border-input bg-muted/40 pl-9 pr-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
         <kbd className="absolute right-3 top-1/2 hidden -translate-y-1/2 rounded border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground lg:block">

@@ -29,7 +29,6 @@ export interface SubscriptionOverview {
 const FEATURE_NAMES: Record<string, string> = {
   learners: 'Learners',
   classes: 'Classes',
-  courses: 'Courses',
   staff: 'Staff members',
   storage: 'Storage',
   assignments: 'Assignments',

@@ -83,7 +83,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <div className="print:hidden">
           <TrialBanner status={trialStatus} />
         </div>
-        <main className="flex-1 overflow-y-auto bg-muted/20 p-4 lg:p-8 print:overflow-visible print:bg-transparent print:p-0">
+        <main className="flex-1 overflow-y-auto bg-gradient-to-br from-brand-50/40 via-muted/20 to-accent/20 p-4 lg:p-8 print:overflow-visible print:bg-transparent print:p-0">
           {children}
         </main>
       </div>

@@ -107,10 +107,72 @@ export async function getMyNotifications(): Promise<Notification[]> {
 
 export interface CalendarItem {
   id: string;
-  kind: 'class' | 'task';
+  kind: 'class' | 'task' | 'lesson';
   title: string;
   date: string | null;
   note: string;
+  joinUrl?: string | null;
+}
+
+export interface UpcomingLesson {
+  id: string;
+  title: string;
+  startsAt: string;
+  joinUrl: string | null;
+  note: string;
+}
+
+/**
+ * A learner's upcoming online lessons — those scheduled for a class they're
+ * enrolled in, plus any one-to-one lessons booked directly for them. The join
+ * link falls back to the class's default meeting link.
+ */
+export async function getMyLessons(): Promise<UpcomingLesson[]> {
+  const learner = await ownLearner();
+  if (!learner) return [];
+  const admin = createAdminClient();
+
+  const { data: memberships } = await admin
+    .from('class_members')
+    .select('class_id')
+    .eq('learner_id', learner.id);
+  const classIds = (memberships ?? []).map((m) => m.class_id);
+
+  // class default meeting links
+  const classById = new Map<string, { name: string; meeting_url: string | null }>();
+  if (classIds.length) {
+    const { data: classes } = await admin
+      .from('classes')
+      .select('id, name, meeting_url')
+      .in('id', classIds);
+    for (const c of classes ?? []) classById.set(c.id, { name: c.name, meeting_url: c.meeting_url });
+  }
+
+  const nowIso = new Date().toISOString();
+  const orFilter = [
+    ...(classIds.length ? [`class_id.in.(${classIds.join(',')})`] : []),
+    `learner_id.eq.${learner.id}`,
+  ].join(',');
+
+  const { data: events } = await admin
+    .from('calendar_events')
+    .select('id, title, starts_at, meeting_url, class_id, learner_id')
+    .eq('kind', 'lesson')
+    .gte('starts_at', nowIso)
+    .or(orFilter)
+    .order('starts_at', { ascending: true })
+    .limit(20);
+
+  return (events ?? []).map((e) => {
+    const klass = e.class_id ? classById.get(e.class_id) : undefined;
+    return {
+      id: e.id,
+      title: e.title,
+      startsAt: e.starts_at,
+      joinUrl: e.meeting_url ?? klass?.meeting_url ?? null,
+      note: klass ? klass.name : '1-to-1 lesson',
+    };
+  });
 }
 
 export async function getMyCalendar(): Promise<CalendarItem[]> {
@@ -124,7 +186,7 @@ export async function getMyCalendar(): Promise<CalendarItem[]> {
     .eq('learner_id', learner.id);
   const classIds = (memberships ?? []).map((m) => m.class_id);
 
-  const [classesRes, attemptsRes] = await Promise.all([
+  const [classesRes, attemptsRes, lessons] = await Promise.all([
     classIds.length
       ? admin.from('classes').select('id, name, start_date').in('id', classIds)
       : Promise.resolve({ data: [] as { id: string; name: string; start_date: string | null }[] }),
@@ -133,9 +195,20 @@ export async function getMyCalendar(): Promise<CalendarItem[]> {
       .select('id, assessment_id, status')
       .eq('learner_id', learner.id)
       .in('status', ['assigned', 'in_progress']),
+    getMyLessons(),
   ]);
 
   const items: CalendarItem[] = [];
+  for (const l of lessons) {
+    items.push({
+      id: `lesson-${l.id}`,
+      kind: 'lesson',
+      title: l.title,
+      date: l.startsAt,
+      note: l.note,
+      joinUrl: l.joinUrl,
+    });
+  }
   for (const c of classesRes.data ?? []) {
     items.push({ id: `class-${c.id}`, kind: 'class', title: c.name, date: c.start_date, note: 'Class' });
   }

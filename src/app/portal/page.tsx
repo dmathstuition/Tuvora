@@ -14,8 +14,10 @@ import {
   Bell,
   BookOpen,
   ArrowRight,
+  Video,
 } from 'lucide-react';
 import { getPortalData } from '@/services/portal';
+import { getMyLessons } from '@/services/portal/extras';
 import { avatarFor, themeFor, levelFromPoints, tierFor, TIERS } from '@/constants/gamification';
 import { LEARNER_FEATURES } from '@/constants/learner-features';
 import { logoutAction } from '@/app/(auth)/actions';
@@ -34,7 +36,7 @@ function greeting(): string {
 }
 
 export default async function PortalHome() {
-  const data = await getPortalData();
+  const [data, lessons] = await Promise.all([getPortalData(), getMyLessons()]);
 
   if (!data.linked || !data.learner) {
     return (
@@ -136,6 +138,51 @@ export default async function PortalHome() {
             </span>
           </div>
         </section>
+
+        {/* Upcoming online lessons */}
+        {lessons.length > 0 && (
+          <section>
+            <h2 className="mb-3 flex items-center gap-2 text-lg font-extrabold text-slate-800">
+              <Video className="h-5 w-5 text-indigo-500" /> Live lessons
+              <span className="text-sm font-medium text-slate-400">— tap Join at class time</span>
+            </h2>
+            <ul className="space-y-2">
+              {lessons.slice(0, 4).map((l) => (
+                <li
+                  key={l.id}
+                  className="flex items-center gap-3 rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm"
+                >
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+                    <Video className="h-5 w-5" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-brand-900">{l.title}</p>
+                    <p className="text-xs text-slate-400">
+                      {l.note} ·{' '}
+                      {new Date(l.startsAt).toLocaleString(undefined, {
+                        weekday: 'short',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  </div>
+                  {l.joinUrl ? (
+                    <Link
+                      href={l.joinUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-indigo-700"
+                    >
+                      <Video className="h-3.5 w-3.5" /> Join
+                    </Link>
+                  ) : (
+                    <span className="whitespace-nowrap text-xs font-semibold text-slate-400">Link soon</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {/* My progress */}
         <section>

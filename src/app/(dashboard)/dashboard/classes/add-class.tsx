@@ -67,6 +67,18 @@ export function AddClassButton({ atLimit }: { atLimit: boolean }) {
                 </div>
               </div>
               <div className="space-y-2">
+                <Label htmlFor="meetingUrl">Online meeting link</Label>
+                <Input
+                  id="meetingUrl"
+                  name="meetingUrl"
+                  type="url"
+                  placeholder="https://meet.google.com/… or Zoom link"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Learners use this to join the online class. You can override it per lesson.
+                </p>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="startDate">Start date</Label>
                 <Input id="startDate" name="startDate" type="date" />
               </div>

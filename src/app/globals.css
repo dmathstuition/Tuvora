@@ -108,4 +108,39 @@
       'rlig' 1,
       'calt' 1;
   }
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: var(--font-display), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+/*
+ * Glassmorphism system.
+ * Frosted, translucent surfaces that sit over gradients and blurred blobs.
+ * `.glass` is the base panel; `.glass-card` adds padding + rounding for cards;
+ * `.glass-nav` is a lighter sticky bar. All are theme-aware.
+ */
+@layer components {
+  .glass {
+    @apply border border-white/40 bg-white/60 shadow-lg backdrop-blur-xl backdrop-saturate-150;
+  }
+  .dark .glass {
+    @apply border-white/10 bg-white/5;
+  }
+  .glass-card {
+    @apply glass rounded-2xl p-6;
+  }
+  .glass-nav {
+    @apply border-b border-white/40 bg-white/70 backdrop-blur-xl backdrop-saturate-150;
+  }
+  .dark .glass-nav {
+    @apply border-white/10 bg-brand-950/60;
+  }
+  /* Soft gradient "aurora" blob used behind glass surfaces. */
+  .blob {
+    @apply pointer-events-none absolute rounded-full opacity-60 blur-3xl;
+  }
 }
