@@ -170,7 +170,32 @@ export async function changePasswordAction(
 
 export async function logoutAction() {
   const supabase = await createClient();
+
+  // If a learner is signing out, send them back to their academy's branded
+  // login page rather than the generic Tuvora login.
+  let target = '/login';
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    const { createAdminClient } = await import('@/lib/supabase/admin');
+    const admin = createAdminClient();
+    const { data: learner } = await admin
+      .from('learners')
+      .select('organization_id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (learner) {
+      const { data: org } = await admin
+        .from('organizations')
+        .select('slug')
+        .eq('id', learner.organization_id)
+        .maybeSingle();
+      if (org?.slug) target = `/school/${org.slug}`;
+    }
+  }
+
   await supabase.auth.signOut();
   revalidatePath('/', 'layout');
-  redirect('/login');
+  redirect(target);
 }

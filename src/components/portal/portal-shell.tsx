@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Bell } from 'lucide-react';
 import { LogoMark } from '@/components/brand/logo';
+import { getPortalBranding } from '@/lib/portal/current-learner';
 import { cn } from '@/lib/utils';
 import { PortalSidebar, PortalBottomNav } from './portal-nav';
 
@@ -11,8 +12,11 @@ export type PortalTab = 'home' | 'learn' | 'progress' | 'messages' | 'profile' |
  * bottom tab bar. On tablets and laptops it expands to a left sidebar layout
  * with a wider content area. (`active` is kept for API compatibility; the nav
  * highlights itself from the current path.)
+ *
+ * The academy's own name + logo brand the shell, so each learner sees whose
+ * academy they're in — resolved server-side from their org.
  */
-export function PortalShell({
+export async function PortalShell({
   studentId,
   avatarEmoji,
   themeGradient,
@@ -26,6 +30,10 @@ export function PortalShell({
   avatarUrl?: string | null;
   children: React.ReactNode;
 }) {
+  const branding = await getPortalBranding();
+  const academyName = branding?.name ?? 'Tuvora';
+  const academyLogoUrl = branding?.logoUrl ?? null;
+
   return (
     <div className="relative min-h-screen bg-gradient-to-b from-indigo-50 via-fuchsia-50/50 to-amber-50/50">
       {/* Playful floating blobs */}
@@ -40,6 +48,8 @@ export function PortalShell({
           avatarEmoji={avatarEmoji}
           themeGradient={themeGradient}
           avatarUrl={avatarUrl}
+          academyName={academyName}
+          academyLogoUrl={academyLogoUrl}
         />
 
         {/* Content column */}
@@ -48,8 +58,19 @@ export function PortalShell({
           <header className="sticky top-0 z-30 border-b border-white/60 bg-white/70 backdrop-blur-xl">
             <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 md:px-8">
               <Link href="/portal" className="flex items-center gap-2 md:hidden" aria-label="Home">
-                <LogoMark className="h-8 w-8" />
-                <span className="text-xs font-bold tracking-widest text-brand-900">TUVORA</span>
+                {academyLogoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={academyLogoUrl}
+                    alt=""
+                    className="h-8 w-8 rounded-lg object-cover"
+                  />
+                ) : (
+                  <LogoMark className="h-8 w-8" />
+                )}
+                <span className="max-w-[10rem] truncate text-sm font-bold text-brand-900">
+                  {academyName}
+                </span>
               </Link>
               {studentId && (
                 <span className="hidden font-mono text-[11px] tracking-wider text-slate-400 md:block">

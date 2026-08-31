@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-export function LoginForm() {
+export function LoginForm({ defaultRedirect = '/dashboard' }: { defaultRedirect?: string }) {
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') ?? '/dashboard';
+  const redirect = searchParams.get('redirect') ?? defaultRedirect;
   const [state, formAction, pending] = useActionState<AuthActionState, FormData>(loginAction, {});
 
   return (
