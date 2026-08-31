@@ -1,6 +1,6 @@
 # Architecture
 
-Tuvora is a multi-tenant SaaS built on Next.js (App Router) and Supabase. The guiding
+Tuvoria is a multi-tenant SaaS built on Next.js (App Router) and Supabase. The guiding
 principle: **security and billing are foundational**, product modules sit on top.
 
 ## Layers

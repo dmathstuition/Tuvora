@@ -6,7 +6,7 @@ import { claimDailyRewardAction } from '@/services/portal';
 
 /**
  * Daily reward chest. Claims +5 points once per day; flips to a claimed state
- * for the rest of the day. Uses the Tuvora brand gradient.
+ * for the rest of the day. Uses the Tuvoria brand gradient.
  */
 export function RewardChest({ claimed }: { claimed: boolean }) {
   const [done, setDone] = useState(claimed);

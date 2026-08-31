@@ -96,7 +96,7 @@ export async function getLearnerReport(id: string): Promise<LearnerReport | null
   });
 
   return {
-    orgName: org?.name ?? 'Tuvora',
+    orgName: org?.name ?? 'Tuvoria',
     generatedAt: new Date().toISOString(),
     learner: profile.learner,
     classes: profile.classes,

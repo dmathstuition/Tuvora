@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 
 /**
- * Tuvora logo mark — the speech/communication shape holding a learner + growth
+ * Tuvoria logo mark — the speech/communication shape holding a learner + growth
  * chart, capped with a graduation cap. Rendered as inline SVG so it inherits
  * theme colors and scales crisply. This encodes the supplied brand identity;
  * do not redesign it.
@@ -12,7 +12,7 @@ export function LogoMark({ className }: { className?: string }) {
       viewBox="0 0 48 48"
       className={cn('h-8 w-8', className)}
       role="img"
-      aria-label="Tuvora"
+      aria-label="Tuvoria"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -49,7 +49,7 @@ export function Logo({
       {showWordmark && (
         <span className="flex flex-col leading-none">
           <span className="text-xl font-bold tracking-tight text-brand-900 dark:text-foreground">
-            Tuvora
+            Tuvoria
           </span>
           {showTagline && (
             <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">

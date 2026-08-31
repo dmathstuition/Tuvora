@@ -23,7 +23,7 @@ export function PortalLocked({ academyName }: { academyName: string }) {
 
         <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-400">
           <LogoMark className="h-5 w-5" />
-          <span className="font-semibold tracking-widest">TUVORA</span>
+          <span className="font-semibold tracking-widest">TUVORIA</span>
         </div>
 
         <form action={logoutAction} className="mt-6">

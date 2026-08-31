@@ -56,7 +56,7 @@ export function PortalSidebar({
   avatarEmoji,
   themeGradient,
   avatarUrl = null,
-  academyName = 'Tuvora',
+  academyName = 'Tuvoria',
   academyLogoUrl = null,
 }: {
   studentId?: string;

@@ -79,7 +79,7 @@ export const LESSON_DURATIONS = [
   { value: '120', label: '2 hours' },
 ] as const;
 
-/** Tuvora modules an org can choose to focus on (labels shown in the wizard). */
+/** Tuvoria modules an org can choose to focus on (labels shown in the wizard). */
 export const ONBOARDING_MODULES = [
   { key: 'learners', label: 'Learners', icon: 'Users' },
   { key: 'classes', label: 'Classes', icon: 'GraduationCap' },

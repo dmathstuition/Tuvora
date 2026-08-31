@@ -1,6 +1,6 @@
 # Deployment
 
-Tuvora is Vercel-compatible and runs against a Supabase project.
+Tuvoria is Vercel-compatible and runs against a Supabase project.
 
 ## Prerequisites
 

@@ -254,7 +254,7 @@ export default async function DashboardPage() {
                     {
                       icon: Sparkles,
                       tone: 'indigo' as const,
-                      title: 'Welcome to Tuvora! 🎉',
+                      title: 'Welcome to Tuvoria! 🎉',
                       subtitle: 'Your workspace is ready',
                       time: 'just now',
                     },
@@ -352,7 +352,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="flex items-center justify-between border-t pt-4 text-xs text-muted-foreground">
-        <span>© {new Date().getFullYear()} Tuvora. All rights reserved.</span>
+        <span>© {new Date().getFullYear()} Tuvoria. All rights reserved.</span>
         <span>v1.0.0</span>
       </div>
     </div>

@@ -1,6 +1,6 @@
 # Subscriptions & Entitlements
 
-Subscription is a core part of Tuvora. Features are restricted by subscription through a
+Subscription is a core part of Tuvoria. Features are restricted by subscription through a
 central **entitlement engine** — never by hardcoded plan checks in components.
 
 ## Data model (all admin-configured, nothing hardcoded)

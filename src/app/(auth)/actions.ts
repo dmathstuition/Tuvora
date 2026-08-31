@@ -172,7 +172,7 @@ export async function logoutAction() {
   const supabase = await createClient();
 
   // If a learner is signing out, send them back to their academy's branded
-  // login page rather than the generic Tuvora login.
+  // login page rather than the generic Tuvoria login.
   let target = '/login';
   const {
     data: { user },

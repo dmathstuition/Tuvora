@@ -4,7 +4,7 @@ import { legalConfig } from '@/config/legal';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
-  description: 'How Tuvora collects, uses and protects personal data.',
+  description: 'How Tuvoria collects, uses and protects personal data.',
 };
 
 const { product, companyName, privacyEmail } = legalConfig;

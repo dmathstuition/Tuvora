@@ -181,7 +181,7 @@ export async function activateLearnerAction(
   const now = new Date();
   const periodEnd = addMonth(now);
 
-  // Record the platform payment (organization -> Tuvora) for this learner-month.
+  // Record the platform payment (organization -> Tuvoria) for this learner-month.
   const { data: payment } = await supabase
     .from('payments')
     .insert({

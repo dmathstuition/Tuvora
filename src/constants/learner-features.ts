@@ -74,7 +74,7 @@ export const LEARNER_FEATURES: LearnerFeature[] = [
   { key: 'focus_mode', label: 'Focus mode', group: 'Play', href: '/portal/learn', status: 'soon', icon: Zap, accent: 'from-slate-600 to-slate-800', tagline: 'Deep work' },
 
   // AI Tools
-  { key: 'ai_tutor', label: 'Tuvora A.I', group: 'AI Tools', href: '/portal/solver', status: 'live', icon: Compass, accent: 'from-brand-500 to-violet-700' },
+  { key: 'ai_tutor', label: 'Tuvoria A.I', group: 'AI Tools', href: '/portal/solver', status: 'live', icon: Compass, accent: 'from-brand-500 to-violet-700' },
   { key: 'question_solver', label: 'Question solver', group: 'AI Tools', href: '/portal/solver', status: 'live', icon: Sigma, accent: 'from-indigo-500 to-blue-700' },
   { key: 'check_work', label: 'Check my work', group: 'AI Tools', href: '/portal/solver', status: 'live', icon: CircleCheck, accent: 'from-emerald-500 to-teal-700' },
   { key: 'code_playground', label: 'Code playground', group: 'AI Tools', href: '/portal/more', status: 'soon', icon: Code2, accent: 'from-fuchsia-500 to-purple-700' },

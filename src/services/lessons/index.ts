@@ -8,7 +8,7 @@ import { assertCan, can, ForbiddenError } from '@/lib/permissions';
 /**
  * Online lessons.
  *
- * Tuvora runs on live online lessons rather than a course catalogue. A lesson
+ * Tuvoria runs on live online lessons rather than a course catalogue. A lesson
  * is a scheduled online session — stored in `calendar_events` with kind
  * 'lesson' — that is assigned to a class (group) OR to a single learner
  * (one-to-one), and carries a meeting link the learner joins from their portal.

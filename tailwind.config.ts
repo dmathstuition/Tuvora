@@ -1,7 +1,7 @@
 import type { Config } from 'tailwindcss';
 
 /**
- * Tuvora design system — Tailwind configuration.
+ * Tuvoria design system — Tailwind configuration.
  *
  * Colors are driven by CSS variables (see src/app/globals.css) so the same
  * token set powers light/dark themes and future per-organization branding
@@ -62,7 +62,7 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
-        // Tuvora brand scale — deep navy through royal indigo.
+        // Tuvoria brand scale — deep navy through royal indigo.
         brand: {
           50: 'hsl(var(--brand-50))',
           100: 'hsl(var(--brand-100))',

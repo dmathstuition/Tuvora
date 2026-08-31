@@ -1,6 +1,6 @@
 /** Central site/brand configuration. */
 export const siteConfig = {
-  name: 'Tuvora',
+  name: 'Tuvoria',
   tagline: 'Manage. Teach. Grow.',
   description:
     'The operating system for independent tutors and tutoring businesses. Manage learners, classes, assessments, payments and growth from one platform.',

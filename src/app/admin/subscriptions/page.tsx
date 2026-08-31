@@ -24,7 +24,7 @@ export default async function AdminSubscriptionsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Subscriptions</h1>
-        <p className="text-sm text-muted-foreground">All organization subscriptions across Tuvora.</p>
+        <p className="text-sm text-muted-foreground">All organization subscriptions across Tuvoria.</p>
       </div>
 
       {subs.length === 0 ? (

@@ -79,7 +79,7 @@ export default async function SchoolLoginPage({ params }: { params: Promise<{ sl
         <p className="mt-6 text-center text-xs text-slate-400">
           Powered by{' '}
           <Link href="/" className="font-semibold text-brand-600 hover:underline">
-            Tuvora
+            Tuvoria
           </Link>
         </p>
       </div>

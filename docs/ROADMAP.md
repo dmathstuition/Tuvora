@@ -1,4 +1,4 @@
-# Tuvora — Implementation Roadmap
+# Tuvoria — Implementation Roadmap
 
 Development proceeds in phases. Foundational security (tenant isolation, authorization,
 entitlements) is completed before product modules are layered on top.

@@ -38,7 +38,7 @@ export function TrialBanner({ status }: { status: TrialStatus }) {
         <AlertTriangle className="h-4 w-4" />
         {pastDue
           ? 'Your payment is past due. Update billing to keep your features active.'
-          : 'Your 14-day free trial has ended. Choose a plan to continue using Tuvora.'}
+          : 'Your 14-day free trial has ended. Choose a plan to continue using Tuvoria.'}
       </span>
       <Link
         href="/dashboard/subscription"

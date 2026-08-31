@@ -1,6 +1,6 @@
 # Tenant Isolation
 
-Tenant isolation is the most important security property in Tuvora. **Organization A must
+Tenant isolation is the most important security property in Tuvoria. **Organization A must
 never be able to access Organization B's data.** This is enforced at the database, not in the
 frontend.
 

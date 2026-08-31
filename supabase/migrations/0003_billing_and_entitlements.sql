@@ -1,6 +1,6 @@
 -- ============================================================================
 -- 0003_billing_and_entitlements.sql
--- Platform (Tuvora) billing: plans, features, entitlements, subscriptions,
+-- Platform (Tuvoria) billing: plans, features, entitlements, subscriptions,
 -- learner-seat items, usage, payments, invoices, webhook idempotency.
 --
 -- KEY PRINCIPLE: prices, limits and feature flags are DATA, never code.
@@ -153,7 +153,7 @@ create index subscription_usage_org_metric_idx
 
 -- ----------------------------------------------------------------------------
 -- payments — money movements. direction distinguishes:
---   'platform' = organization pays Tuvora
+--   'platform' = organization pays Tuvoria
 --   'tutor'    = parent/learner pays the tutor organization
 -- ----------------------------------------------------------------------------
 create table public.payments (

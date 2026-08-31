@@ -4,7 +4,7 @@ There are **two distinct billing systems**. Do not conflate them.
 
 | System | Direction | Tables |
 | --- | --- | --- |
-| **Platform billing** | Organization → Tuvora | `subscriptions`, `payments(direction='platform')`, `invoices(direction='platform')` |
+| **Platform billing** | Organization → Tuvoria | `subscriptions`, `payments(direction='platform')`, `invoices(direction='platform')` |
 | **Tutor billing** | Parent/Learner → Tutor org | `payments(direction='tutor')`, `invoices(direction='tutor')` |
 
 ## Money representation

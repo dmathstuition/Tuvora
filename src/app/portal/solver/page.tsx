@@ -19,7 +19,7 @@ export default async function PortalSolver() {
       <div className="space-y-5">
         <section className="rounded-3xl bg-gradient-to-br from-brand-600 via-violet-600 to-fuchsia-600 p-6 text-white">
           <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-white/80">
-            <Compass className="h-3.5 w-3.5" /> Tuvora A.I
+            <Compass className="h-3.5 w-3.5" /> Tuvoria A.I
           </p>
           <h1 className="mt-2 text-2xl font-extrabold">Question solver 🤖</h1>
           <p className="mt-1 text-white/85">

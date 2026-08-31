@@ -7,17 +7,17 @@
  */
 export const legalConfig = {
   /** Trading/product name. */
-  product: 'Tuvora',
+  product: 'Tuvoria',
   /** Registered legal entity that operates the service. */
-  companyName: 'Tuvora',
+  companyName: 'Tuvoria',
   /** Registered business address. */
   address: '[Registered business address]',
   /** Country whose laws govern the agreement. */
   jurisdiction: '[Country / State]',
   /** General + role-specific contact addresses. */
-  contactEmail: 'hello@tuvora.app',
-  privacyEmail: 'privacy@tuvora.app',
-  supportEmail: 'support@tuvora.app',
+  contactEmail: 'hello@tuvoria.app',
+  privacyEmail: 'privacy@tuvoria.app',
+  supportEmail: 'support@tuvoria.app',
   /** Last time the legal documents were updated. */
   lastUpdated: 'August 30, 2026',
 } as const;

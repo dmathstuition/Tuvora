@@ -1,7 +1,7 @@
 -- ============================================================================
 -- 0021 · Online lessons — drop the courses/modules LMS concept
 --
--- Tuvora is built around live online lessons, not a course catalogue. A tutor
+-- Tuvoria is built around live online lessons, not a course catalogue. A tutor
 -- or admin creates a class with an online meeting link, then schedules lessons
 -- against that class (group) or against a single learner (one-to-one). Learners
 -- join from their portal using the meeting link.

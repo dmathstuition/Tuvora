@@ -29,7 +29,7 @@ export default async function EnrollPage({
         <div className="mb-6 text-center">
           <span className="text-4xl">🎒</span>
           <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-slate-800">
-            {ctx.orgName ?? 'Tuvora'}
+            {ctx.orgName ?? 'Tuvoria'}
           </h1>
           <p className="mt-1 text-sm text-slate-500">Manage. Teach. Grow.</p>
         </div>

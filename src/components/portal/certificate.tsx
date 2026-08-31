@@ -3,7 +3,7 @@ import { CERTIFICATE_TYPES } from '@/constants/certificates';
 import { type Certificate } from '@/services/certificates';
 
 /**
- * A print-ready certificate. Designed on Tuvora branding with a decorative
+ * A print-ready certificate. Designed on Tuvoria branding with a decorative
  * border and a gold seal; the containing page's print CSS strips all chrome so
  * "Save as PDF" yields a clean, shareable award.
  */

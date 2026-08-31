@@ -1,8 +1,8 @@
-# Tuvora
+# Tuvoria
 
 **Manage. Teach. Grow.** — the operating system for independent tutors and tutoring businesses.
 
-Tuvora is a production-grade, multi-tenant SaaS platform that lets tutors and tutoring
+Tuvoria is a production-grade, multi-tenant SaaS platform that lets tutors and tutoring
 businesses run their entire operation from one place: learners, classes, courses, lessons,
 assignments, assessments, attendance, grades, progress, reports, resources, messaging,
 scheduling, payments, invoices, subscriptions and analytics.
