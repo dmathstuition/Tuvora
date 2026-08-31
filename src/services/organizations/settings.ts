@@ -11,6 +11,7 @@ import { z } from 'zod';
 export interface OrgSettings {
   id: string;
   name: string;
+  slug: string;
   type: string;
   email: string | null;
   country: string | null;
@@ -30,7 +31,7 @@ export async function getOrgSettings(): Promise<OrgSettings | null> {
   const { data } = await supabase
     .from('organizations')
     .select(
-      'id, name, type, email, country, currency, timezone, subjects, employs_tutors, brand_color, logo_url, portal_preferences',
+      'id, name, slug, type, email, country, currency, timezone, subjects, employs_tutors, brand_color, logo_url, portal_preferences',
     )
     .eq('id', ctx.organizationId)
     .maybeSingle();
@@ -39,6 +40,7 @@ export async function getOrgSettings(): Promise<OrgSettings | null> {
   return {
     id: data.id,
     name: data.name,
+    slug: data.slug,
     type: data.type,
     email: data.email,
     country: data.country,

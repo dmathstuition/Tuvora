@@ -56,18 +56,29 @@ export function PortalSidebar({
   avatarEmoji,
   themeGradient,
   avatarUrl = null,
+  academyName = 'Tuvora',
+  academyLogoUrl = null,
 }: {
   studentId?: string;
   avatarEmoji: string;
   themeGradient: string;
   avatarUrl?: string | null;
+  academyName?: string;
+  academyLogoUrl?: string | null;
 }) {
   const pathname = usePathname();
   return (
     <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-white/60 bg-white/70 backdrop-blur-xl md:flex">
       <div className="flex h-16 items-center gap-2 border-b border-white/60 px-5">
-        <LogoMark className="h-8 w-8" />
-        <span className="text-lg font-bold tracking-tight text-brand-900">Tuvora</span>
+        {academyLogoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={academyLogoUrl} alt="" className="h-9 w-9 shrink-0 rounded-lg object-cover" />
+        ) : (
+          <LogoMark className="h-8 w-8 shrink-0" />
+        )}
+        <span className="truncate text-lg font-bold tracking-tight text-brand-900">
+          {academyName}
+        </span>
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto p-3">

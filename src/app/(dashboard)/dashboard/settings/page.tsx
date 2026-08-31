@@ -9,7 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { OrgProfileForm, BrandingForm, LogoUpload } from './settings-forms';
 import { StudentAppForm } from './student-app-form';
+import { StudentLoginLink } from './student-link';
 import { ChangePasswordForm } from './change-password';
+import { publicEnv } from '@/lib/public-env';
 
 export const metadata: Metadata = { title: 'Settings' };
 
@@ -69,6 +71,19 @@ export default async function SettingsPage() {
           <div className="border-t pt-6">
             <BrandingForm settings={settings} disabled={!canBranding} />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Student login link</CardTitle>
+          <CardDescription>
+            Share this link with your learners — it opens a login page branded with your academy&apos;s
+            name and logo, and sends them straight to their portal.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <StudentLoginLink url={`${publicEnv.appUrl}/school/${settings.slug}`} />
         </CardContent>
       </Card>
 

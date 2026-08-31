@@ -41,3 +41,27 @@ export const getCurrentLearner = cache(async (): Promise<CurrentLearner | null> 
     avatarUrl: data.avatar_url,
   };
 });
+
+export interface PortalBranding {
+  /** The academy the learner belongs to. */
+  name: string;
+  logoUrl: string | null;
+}
+
+/**
+ * The academy's name + logo for the signed-in learner, so the portal shell can
+ * show whose academy the learner is inside (rather than Tuvora's own brand).
+ * Cached per request and keyed off the already-cached learner lookup.
+ */
+export const getPortalBranding = cache(async (): Promise<PortalBranding | null> => {
+  const learner = await getCurrentLearner();
+  if (!learner) return null;
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from('organizations')
+    .select('name, logo_url')
+    .eq('id', learner.organizationId)
+    .maybeSingle();
+  if (!data) return null;
+  return { name: data.name, logoUrl: data.logo_url };
+});
