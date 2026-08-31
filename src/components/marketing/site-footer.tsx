@@ -54,7 +54,7 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-border/60">
         <div className="container flex flex-col gap-2 py-4 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <span>© {new Date().getFullYear()} Tuvora. All rights reserved.</span>
+          <span>© {new Date().getFullYear()} Tuvoria. All rights reserved.</span>
           <span className="flex flex-wrap gap-x-4 gap-y-1">
             {LEGAL_PAGES.map((p) => (
               <Link key={p.href} href={p.href} className="hover:text-foreground">

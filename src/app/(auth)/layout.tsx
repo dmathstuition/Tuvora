@@ -17,9 +17,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className="blob bottom-[-6rem] right-[-4rem] h-72 w-72 bg-fuchsia-300/30" />
 
         <div className="relative mb-auto">
-          <Link href="/" aria-label="Tuvora home" className="inline-flex items-center gap-2">
+          <Link href="/" aria-label="Tuvoria home" className="inline-flex items-center gap-2">
             <LogoMark className="h-8 w-8" />
-            <span className="text-lg font-bold tracking-tight text-brand-900">Tuvora</span>
+            <span className="text-lg font-bold tracking-tight text-brand-900">Tuvoria</span>
           </Link>
         </div>
 
@@ -28,7 +28,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </div>
 
         <p className="relative mx-auto w-full max-w-sm text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Tuvora · Manage. Teach. Grow.
+          © {new Date().getFullYear()} Tuvoria · Manage. Teach. Grow.
         </p>
       </div>
 
@@ -41,7 +41,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 backdrop-blur">
             <LogoMark className="h-6 w-6" />
           </span>
-          <span className="text-sm font-bold uppercase tracking-widest text-white/80">Tuvora</span>
+          <span className="text-sm font-bold uppercase tracking-widest text-white/80">Tuvoria</span>
         </div>
 
         <div className="relative space-y-8">
@@ -69,7 +69,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               ))}
             </div>
             <p className="text-sm text-white/90">
-              “Tuvora replaced three tools — my learners join live lessons in a tap and I finally get
+              “Tuvoria replaced three tools — my learners join live lessons in a tap and I finally get
               paid on time.”
             </p>
             <p className="mt-2 text-xs font-semibold text-brand-100">A growing online academy</p>

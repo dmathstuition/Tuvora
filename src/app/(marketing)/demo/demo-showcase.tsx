@@ -74,7 +74,7 @@ export function DemoShowcase() {
           <span className="h-3 w-3 rounded-full bg-destructive/60" />
           <span className="h-3 w-3 rounded-full bg-warning/60" />
           <span className="h-3 w-3 rounded-full bg-success/60" />
-          <span className="ml-3 text-xs text-muted-foreground">app.tuvora.com/{tab === 'dashboard' ? 'dashboard' : tab}</span>
+          <span className="ml-3 text-xs text-muted-foreground">app.tuvoria.com/{tab === 'dashboard' ? 'dashboard' : tab}</span>
         </div>
 
         <div className="bg-muted/20 p-4 sm:p-6">

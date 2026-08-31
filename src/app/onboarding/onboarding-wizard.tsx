@@ -163,7 +163,7 @@ export function OnboardingWizard({ initial }: { initial: OnboardingData }) {
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <LogoMark className="h-8 w-8" />
-            <span className="text-lg font-bold tracking-tight text-brand-900">Tuvora</span>
+            <span className="text-lg font-bold tracking-tight text-brand-900">Tuvoria</span>
           </div>
           <span className="text-xs font-semibold text-slate-400">
             Step {step + 1} of {total}

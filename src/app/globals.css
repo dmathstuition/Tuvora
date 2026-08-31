@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /*
- * Tuvora design tokens.
+ * Tuvoria design tokens.
  * Brand direction: deep navy + royal/indigo blue, white, very light neutrals.
  * All component colors reference these semantic tokens (see tailwind.config.ts),
  * so light/dark and future per-org branding never require touching components.

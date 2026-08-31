@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
   title: 'About',
-  description: 'Tuvora is on a mission to give every tutor the tools of a modern school.',
+  description: 'Tuvoria is on a mission to give every tutor the tools of a modern school.',
 };
 
 const values = [
@@ -30,7 +30,7 @@ export default function AboutPage() {
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
           Great tutors change lives — but they&apos;re often stuck juggling spreadsheets, chat apps
-          and paper registers. Tuvora brings everything a tutoring business needs into one calm,
+          and paper registers. Tuvoria brings everything a tutoring business needs into one calm,
           modern platform, so educators can spend their time teaching.
         </p>
       </section>
@@ -70,7 +70,7 @@ export default function AboutPage() {
         <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-brand-800 via-brand-700 to-violet-700 p-10 text-center text-white shadow-2xl md:p-16">
           <div className="blob left-10 top-0 h-64 w-64 bg-fuchsia-400/40" />
           <div className="relative">
-            <h2 className="mx-auto max-w-2xl text-3xl font-bold tracking-tight">Join tutors growing with Tuvora</h2>
+            <h2 className="mx-auto max-w-2xl text-3xl font-bold tracking-tight">Join tutors growing with Tuvoria</h2>
             <p className="mx-auto mt-3 max-w-xl text-brand-100">Start free today — no credit card required.</p>
             <div className="mt-8">
               <Button asChild size="lg" variant="secondary" className="shadow-lg">

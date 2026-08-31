@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
   title: 'For Tutors',
-  description: 'Whether you teach solo or run an academy, Tuvora scales with you.',
+  description: 'Whether you teach solo or run an academy, Tuvoria scales with you.',
 };
 
 const audiences = [
@@ -45,7 +45,7 @@ export default function ForTutorsPage() {
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
           Whether you teach one learner from your kitchen table or run an academy with a team of
-          tutors, Tuvora scales with you.
+          tutors, Tuvoria scales with you.
         </p>
         <div className="mt-8 flex justify-center">
           <Button asChild size="lg" className="shadow-lg shadow-brand-500/25">

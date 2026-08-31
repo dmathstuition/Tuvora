@@ -16,11 +16,11 @@ export function AdminSidebar() {
       <div className="pointer-events-none absolute -right-12 bottom-24 h-40 w-40 rounded-full bg-fuchsia-500/10 blur-3xl" />
 
       <div className="relative flex h-16 items-center gap-2 border-b border-white/10 px-6">
-        <Link href="/admin" aria-label="Tuvora admin" className="flex items-center gap-2">
+        <Link href="/admin" aria-label="Tuvoria admin" className="flex items-center gap-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm">
             <LogoMark className="h-6 w-6" />
           </span>
-          <span className="text-lg font-bold tracking-tight text-white">Tuvora</span>
+          <span className="text-lg font-bold tracking-tight text-white">Tuvoria</span>
         </Link>
         <span className="ml-auto rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white/70">
           Admin

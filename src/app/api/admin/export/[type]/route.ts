@@ -64,7 +64,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ typ
   return new NextResponse(csv, {
     headers: {
       'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': `attachment; filename="tuvora-${type}-${new Date().toISOString().slice(0, 10)}.csv"`,
+      'Content-Disposition': `attachment; filename="tuvoria-${type}-${new Date().toISOString().slice(0, 10)}.csv"`,
     },
   });
 }

@@ -11,7 +11,7 @@ export default async function AdminSettingsPage() {
   const defaultProvider = process.env.NEXT_PUBLIC_DEFAULT_PAYMENT_PROVIDER ?? 'paystack';
 
   const config: { label: string; value: string }[] = [
-    { label: 'Application', value: process.env.NEXT_PUBLIC_APP_NAME ?? 'Tuvora' },
+    { label: 'Application', value: process.env.NEXT_PUBLIC_APP_NAME ?? 'Tuvoria' },
     { label: 'Active plans', value: String(plans.filter((p) => p.isActive).length) },
     { label: 'Features', value: String(features.length) },
     { label: 'Default payment provider', value: defaultProvider },

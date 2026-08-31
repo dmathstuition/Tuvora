@@ -87,7 +87,7 @@ export default function HomePage() {
             The operating system for tutors and tutoring businesses
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-            Tuvora brings learners, live online lessons, assessments, progress, communication and
+            Tuvoria brings learners, live online lessons, assessments, progress, communication and
             payments together — so you can run your entire tutoring operation from one beautiful
             place.
           </p>
@@ -113,7 +113,7 @@ export default function HomePage() {
                 <span className="h-3 w-3 rounded-full bg-amber-400" />
                 <span className="h-3 w-3 rounded-full bg-emerald-400" />
                 <span className="ml-3 text-xs font-medium text-muted-foreground">
-                  Tuvora · Today’s lessons
+                  Tuvoria · Today’s lessons
                 </span>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
@@ -214,7 +214,7 @@ export default function HomePage() {
             ))}
           </div>
           <p className="text-lg font-medium text-foreground md:text-xl">
-            “Tuvora replaced three tools. My learners join their live lessons in one tap, parents
+            “Tuvoria replaced three tools. My learners join their live lessons in one tap, parents
             can see progress, and I finally get paid on time.”
           </p>
           <p className="mt-4 text-sm font-semibold text-muted-foreground">

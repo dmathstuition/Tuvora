@@ -50,7 +50,7 @@ export interface PortalBranding {
 
 /**
  * The academy's name + logo for the signed-in learner, so the portal shell can
- * show whose academy the learner is inside (rather than Tuvora's own brand).
+ * show whose academy the learner is inside (rather than Tuvoria's own brand).
  * Cached per request and keyed off the already-cached learner lookup.
  */
 export const getPortalBranding = cache(async (): Promise<PortalBranding | null> => {

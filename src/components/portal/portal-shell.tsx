@@ -31,7 +31,7 @@ export async function PortalShell({
   children: React.ReactNode;
 }) {
   const branding = await getPortalBranding();
-  const academyName = branding?.name ?? 'Tuvora';
+  const academyName = branding?.name ?? 'Tuvoria';
   const academyLogoUrl = branding?.logoUrl ?? null;
 
   return (

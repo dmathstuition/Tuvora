@@ -7,7 +7,7 @@ export default function LoginPage() {
     <div className="space-y-6">
       <div className="space-y-1.5">
         <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
-        <p className="text-sm text-muted-foreground">Log in to your Tuvora account.</p>
+        <p className="text-sm text-muted-foreground">Log in to your Tuvoria account.</p>
       </div>
 
       <Suspense fallback={<div className="h-48" />}>
@@ -15,7 +15,7 @@ export default function LoginPage() {
       </Suspense>
 
       <p className="text-center text-sm text-muted-foreground">
-        New to Tuvora?{' '}
+        New to Tuvoria?{' '}
         <Link href="/signup" className="font-medium text-primary hover:underline">
           Create an account
         </Link>

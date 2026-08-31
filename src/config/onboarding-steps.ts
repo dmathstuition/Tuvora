@@ -16,7 +16,7 @@ export const ONBOARDING_STEPS: OnboardingStepMeta[] = [
   { key: 'organization', title: 'Your organization', subtitle: 'Set up your academy’s identity.' },
   { key: 'teaching', title: 'What you teach', subtitle: 'Subjects, levels and how you deliver.' },
   { key: 'learners', title: 'Your learners', subtitle: 'A quick picture of who you teach.', optional: true },
-  { key: 'modules', title: 'What to manage', subtitle: 'Pick the tools you’ll use in Tuvora.' },
+  { key: 'modules', title: 'What to manage', subtitle: 'Pick the tools you’ll use in Tuvoria.' },
   { key: 'workspace', title: 'Workspace preferences', subtitle: 'Defaults for grading and scheduling.' },
   { key: 'team', title: 'Invite your team', subtitle: 'Add tutors and staff — or do it later.', optional: true },
   { key: 'complete', title: 'You’re all set', subtitle: 'Review and enter your dashboard.' },

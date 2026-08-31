@@ -14,7 +14,7 @@ export default async function AdminUsagePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Usage Analytics</h1>
-        <p className="text-sm text-muted-foreground">How Tuvora is used across the platform.</p>
+        <p className="text-sm text-muted-foreground">How Tuvoria is used across the platform.</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

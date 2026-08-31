@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 import { publicEnv } from '@/lib/public-env';
 
 /**
- * The absolute base URL for the current request (e.g. https://tuvora.app).
+ * The absolute base URL for the current request (e.g. https://tuvoria.app).
  *
  * Derived from the incoming request headers so generated links (invites,
  * portal links) always point at the domain the user is actually on — even if

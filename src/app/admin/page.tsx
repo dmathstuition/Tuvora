@@ -85,7 +85,7 @@ export default async function AdminDashboardPage() {
               <Sparkles className="h-3.5 w-3.5" /> Platform control centre
             </p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight">Welcome back, {firstName} 👋</h1>
-            <p className="mt-1 text-white/80">Here&apos;s what&apos;s happening across Tuvora today.</p>
+            <p className="mt-1 text-white/80">Here&apos;s what&apos;s happening across Tuvoria today.</p>
           </div>
           <div className="flex items-center gap-2">
             <RangePicker size="md" />
@@ -260,7 +260,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="flex items-center justify-between border-t pt-4 text-xs text-muted-foreground">
-        <span>© {new Date().getFullYear()} Tuvora. All rights reserved.</span>
+        <span>© {new Date().getFullYear()} Tuvoria. All rights reserved.</span>
         <span>v1.0.0</span>
       </div>
     </div>

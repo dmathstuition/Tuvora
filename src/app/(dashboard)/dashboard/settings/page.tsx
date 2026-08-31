@@ -104,7 +104,7 @@ export default async function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Security</CardTitle>
-          <CardDescription>Change the password you use to sign in to Tuvora.</CardDescription>
+          <CardDescription>Change the password you use to sign in to Tuvoria.</CardDescription>
         </CardHeader>
         <CardContent>
           <ChangePasswordForm />

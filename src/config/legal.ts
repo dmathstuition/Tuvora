@@ -7,7 +7,7 @@
  */
 export const legalConfig = {
   /** Trading/product name. */
-  product: 'Tuvora',
+  product: 'Tuvoria',
   /** Registered legal entity that operates the service. */
   companyName: 'D-Maths Academy',
   /** Registered business address. */

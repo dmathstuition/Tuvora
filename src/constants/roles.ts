@@ -33,7 +33,7 @@ export const PERMISSIONS = [
   'members.invite',
   'members.manage',
   'members.remove',
-  // Billing (Tuvora subscription)
+  // Billing (Tuvoria subscription)
   'billing.view',
   'billing.manage',
   // Learners

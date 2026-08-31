@@ -30,7 +30,7 @@ export function Sidebar({ permissions, org }: { permissions: Permission[]; org: 
     <aside className="hidden w-64 shrink-0 border-r bg-card lg:flex lg:h-screen lg:flex-col">
       {/* Logo */}
       <div className="flex h-16 shrink-0 items-center border-b px-6">
-        <Link href="/dashboard" aria-label="Tuvora dashboard">
+        <Link href="/dashboard" aria-label="Tuvoria dashboard">
           <Logo showTagline />
         </Link>
       </div>
@@ -115,7 +115,7 @@ export function Sidebar({ permissions, org }: { permissions: Permission[]; org: 
         {!org.hasPlan && (
           <div className="rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 p-4 text-white">
             <p className="flex items-center gap-1.5 text-sm font-bold">
-              <Rocket className="h-4 w-4" /> Unlock the full power of Tuvora
+              <Rocket className="h-4 w-4" /> Unlock the full power of Tuvoria
             </p>
             <p className="mt-1 text-xs text-white/80">
               Subscribe to a plan and access all premium features.

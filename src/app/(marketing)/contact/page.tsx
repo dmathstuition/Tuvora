@@ -4,7 +4,7 @@ import { legalConfig } from '@/config/legal';
 
 export const metadata: Metadata = {
   title: 'Contact',
-  description: 'Get in touch with the Tuvora team.',
+  description: 'Get in touch with the Tuvoria team.',
 };
 
 const { companyName, address, contactEmail, supportEmail, privacyEmail } = legalConfig;

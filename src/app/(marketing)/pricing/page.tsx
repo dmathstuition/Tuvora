@@ -34,7 +34,7 @@ export default async function PricingPage({
         <h1 className="text-4xl font-bold tracking-tight">Pricing that grows with your learners</h1>
         <p className="mt-3 text-muted-foreground">
           Start with a base plan that includes a set number of learners, then add more as you grow.
-          Prices are configured by Tuvora and shown live from our catalogue.
+          Prices are configured by Tuvoria and shown live from our catalogue.
         </p>
         {/* Currency switcher (links preserve SSR + shareable URLs) */}
         <div className="mt-6 inline-flex rounded-md border p-1 text-sm">

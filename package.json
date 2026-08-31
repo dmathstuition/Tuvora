@@ -1,8 +1,8 @@
 {
-  "name": "tuvora",
+  "name": "tuvoria",
   "version": "0.1.0",
   "private": true,
-  "description": "Tuvora — the operating system for independent tutors and tutoring businesses.",
+  "description": "Tuvoria — the operating system for independent tutors and tutoring businesses.",
   "packageManager": "pnpm@10.33.0",
   "engines": {
     "node": ">=20.0.0"

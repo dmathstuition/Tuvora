@@ -7,7 +7,7 @@ export function SiteHeader() {
   return (
     <header className="glass-nav sticky top-0 z-40 w-full">
       <div className="container flex h-16 items-center justify-between">
-        <Link href="/" aria-label="Tuvora home">
+        <Link href="/" aria-label="Tuvoria home">
           <Logo />
         </Link>
         <nav className="hidden items-center gap-6 md:flex">

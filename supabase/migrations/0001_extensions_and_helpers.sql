@@ -76,7 +76,7 @@ create type attendance_status as enum ('present', 'absent', 'late', 'excused');
 
 create type invoice_status as enum ('draft', 'open', 'paid', 'void', 'uncollectible');
 create type payment_status as enum ('pending', 'succeeded', 'failed', 'refunded');
-create type payment_direction as enum ('platform', 'tutor'); -- Tuvora billing vs tutor→learner billing
+create type payment_direction as enum ('platform', 'tutor'); -- Tuvoria billing vs tutor→learner billing
 
 -- ----------------------------------------------------------------------------
 -- updated_at trigger helper

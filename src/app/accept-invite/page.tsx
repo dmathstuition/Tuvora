@@ -45,7 +45,7 @@ export default async function AcceptInvitePage({
             </>
           ) : (
             <>
-              <h1 className="text-xl font-bold">You&apos;ve been invited to Tuvora</h1>
+              <h1 className="text-xl font-bold">You&apos;ve been invited to Tuvoria</h1>
               <p className="text-sm text-muted-foreground">
                 {user
                   ? 'Accept the invitation to join the organization and access its dashboard.'

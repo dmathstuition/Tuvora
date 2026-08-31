@@ -5,7 +5,7 @@ import { test, expect } from '@playwright/test';
  * onboarding → add learner → reach limit → upgrade → …) are added as the
  * modules land; see docs/development.md for the full e2e coverage plan.
  */
-test('homepage renders the Tuvora positioning and primary CTAs', async ({ page }) => {
+test('homepage renders the Tuvoria positioning and primary CTAs', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toContainText(/tutors|tutoring/i);
   await expect(page.getByRole('link', { name: /start free trial/i }).first()).toBeVisible();
