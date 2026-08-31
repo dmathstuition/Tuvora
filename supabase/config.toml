@@ -8,3 +8,11 @@ major_version = 15
 [auth]
 enable_signup = true
 # Add site_url / redirect URLs for your deployment when linking.
+
+# Branded transactional emails. `content_path` is relative to this file.
+# NOTE: these apply to the local stack (`supabase start`) and to config pushed
+# via `supabase config push`. On hosted Supabase you can also paste the same
+# HTML under Authentication → Email Templates → Reset Password.
+[auth.email.template.recovery]
+subject = "Reset your Tuvoria password"
+content_path = "./supabase/templates/recovery.html"
