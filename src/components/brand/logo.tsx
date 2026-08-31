@@ -1,39 +1,27 @@
 import { cn } from '@/lib/utils';
 
 /**
- * Tuvoria logo mark — the speech/communication shape holding a learner + growth
- * chart, capped with a graduation cap. Rendered as inline SVG so it inherits
- * theme colors and scales crisply. This encodes the supplied brand identity;
- * do not redesign it.
+ * Tuvoria logo mark — the academy's official icon (graduation cap over a
+ * speech bubble holding a learner + growth chart). Served as the supplied
+ * brand image so it renders exactly as designed. Square; scales with the
+ * height/width utility classes callers pass (defaults to h-8 w-8).
  */
 export function LogoMark({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 48 48"
-      className={cn('h-8 w-8', className)}
-      role="img"
-      aria-label="Tuvoria"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      {/* Speech / communication shape */}
-      <path
-        d="M9 10.5A4.5 4.5 0 0 1 13.5 6h21A4.5 4.5 0 0 1 39 10.5v18a4.5 4.5 0 0 1-4.5 4.5H21l-7.2 6.2c-1 .86-2.55.15-2.55-1.18V33h-.25A4.5 4.5 0 0 1 6.5 28.5"
-        fill="hsl(var(--brand-900))"
-      />
-      {/* Growth chart bars */}
-      <rect x="14.5" y="20" width="3.2" height="6.5" rx="1" fill="hsl(var(--brand-400))" />
-      <rect x="19.2" y="16.5" width="3.2" height="10" rx="1" fill="hsl(var(--brand-500))" />
-      {/* Learner figure */}
-      <circle cx="29" cy="16.5" r="3" fill="hsl(var(--brand-100))" />
-      <path d="M23.6 26c0-3 2.4-5 5.4-5s5.4 2 5.4 5z" fill="hsl(var(--brand-100))" />
-      {/* Graduation cap */}
-      <path d="M24 2 40 8.5 24 15 8 8.5 24 2Z" fill="hsl(var(--brand-500))" />
-      <path d="M37 11v5.5c0 2.4-5.8 4.5-13 4.5" stroke="hsl(var(--brand-500))" strokeWidth="1.6" fill="none" strokeLinecap="round" opacity="0" />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/brand/tuvoria-mark.png"
+      alt="Tuvoria"
+      className={cn('h-8 w-8 object-contain', className)}
+    />
   );
 }
 
+/**
+ * Full brand lockup: the official mark next to the two-tone "Tuvoria" wordmark
+ * (purple "Tu", navy "voria") to match the supplied logo, with an optional
+ * tagline. Used in headers, footers and sidebars.
+ */
 export function Logo({
   className,
   showWordmark = true,
@@ -45,14 +33,15 @@ export function Logo({
 }) {
   return (
     <span className={cn('inline-flex items-center gap-2', className)}>
-      <LogoMark />
+      <LogoMark className="h-9 w-9" />
       {showWordmark && (
         <span className="flex flex-col leading-none">
-          <span className="text-xl font-bold tracking-tight text-brand-900 dark:text-foreground">
-            Tuvoria
+          <span className="text-xl font-extrabold tracking-tight">
+            <span className="text-brand-600 dark:text-brand-400">Tu</span>
+            <span className="text-brand-900 dark:text-foreground">voria</span>
           </span>
           {showTagline && (
-            <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+            <span className="mt-0.5 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
               Manage. Teach. Grow.
             </span>
           )}
