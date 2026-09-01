@@ -9,10 +9,18 @@ major_version = 15
 enable_signup = true
 # Add site_url / redirect URLs for your deployment when linking.
 
+[auth.email]
+# Require new users to confirm their email before they get a session.
+enable_confirmations = true
+
 # Branded transactional emails. `content_path` is relative to this file.
 # NOTE: these apply to the local stack (`supabase start`) and to config pushed
-# via `supabase config push`. On hosted Supabase you can also paste the same
-# HTML under Authentication → Email Templates → Reset Password.
+# via `supabase config push`. On hosted Supabase you must ALSO enable SMTP and
+# paste the same HTML under Authentication → Emails (see docs/email-setup.md).
+[auth.email.template.confirmation]
+subject = "Confirm your Tuvoria account"
+content_path = "./supabase/templates/confirmation.html"
+
 [auth.email.template.recovery]
 subject = "Reset your Tuvoria password"
 content_path = "./supabase/templates/recovery.html"
